@@ -4,7 +4,7 @@ from supabase import create_client, Client
 import os
 import datetime
 
-# --- 1. ESTÉTICA PREMIUM (SIN TOCAR) ---
+# --- 1. CONFIGURACIÓN VISUAL PREMIUM ---
 st.set_page_config(page_title="RUTH Pro", page_icon="●", layout="wide", initial_sidebar_state="expanded")
 
 st.markdown("""
@@ -32,28 +32,12 @@ st.markdown("""
     <div class="ruth-subtitle">UNIVERSAL BUSINESS SUITE</div>
 """, unsafe_allow_html=True)
 
-# --- 2. DICCIONARIO DE PERSONALIDADES RADICALES ---
+# --- 2. PERSONALIDADES ---
 PERSONALIDADES = {
-    "Abogada": (
-        "Eres RUTH Legal Advisor. Tu tono es frío, formal y extremadamente técnico. "
-        "Utilizas jerga jurídica, analizas riesgos y exiges precisión. No usas emojis. "
-        "PROHIBIDO disculparte por cambiar de modo. Eres una experta senior en leyes."
-    ),
-    "Amazon Pro": (
-        "Eres RUTH Amazon Strategist. Tu enfoque es puramente comercial y agresivo. "
-        "Hablas de algoritmos, conversiones (CTR), optimización de keywords y rentabilidad. "
-        "Tu meta es que el usuario venda más. Sé directa y pragmática."
-    ),
-    "Marketing": (
-        "Eres RUTH Creative Copywriter. Tu tono es magnético, persuasivo y vibrante. "
-        "Utilizas psicología del consumidor y gatillos mentales. Creas deseo en cada frase. "
-        "Eres experta en storytelling y ventas emocionales."
-    ),
-    "Estratega": (
-        "Eres RUTH CEO Consultant. Tu visión es a 30,000 pies de altura. "
-        "Analizas escalabilidad, flujos de caja y ventaja competitiva. Hablas como una jefa de nivel ejecutivo. "
-        "Tu lenguaje es sobrio, visionario y orientado a grandes resultados."
-    )
+    "Abogada": "Eres RUTH Legal Advisor. Tono formal, frío y técnico. Sin disculpas.",
+    "Amazon Pro": "Eres RUTH Amazon Strategist. SEO, ventas y rentabilidad. Directa.",
+    "Marketing": "Eres RUTH Copywriter. Tono magnético, persuasivo y creativo.",
+    "Estratega": "Eres RUTH CEO Advisor. Escalabilidad y visión ejecutiva."
 }
 
 # --- 3. CONEXIONES ---
@@ -64,18 +48,22 @@ supabase = create_client(st.secrets["SUPABASE_URL"], st.secrets["SUPABASE_KEY"])
 
 def guardar_nube(mensajes):
     if mensajes:
-        try: supabase.table("chats").insert({"user_email": "Invitado", "messages": mensajes}).execute()
-    except: pass
+        try:
+            supabase.table("chats").insert({"user_email": "Invitado", "messages": mensajes}).execute()
+        except Exception:
+            pass
 
 def cargar_nube():
     try:
         res = supabase.table("chats").select("*").eq("user_email", "Invitado").order("created_at", desc=True).limit(5).execute()
         return res.data
-    except: return []
+    except Exception:
+        return []
 
-if "messages" not in st.session_state: st.session_state.messages = []
+if "messages" not in st.session_state:
+    st.session_state.messages = []
 
-# --- 4. PANEL LATERAL ---
+# --- 4. SIDEBAR ---
 with st.sidebar:
     st.markdown("<h2 style='color: white; font-weight: 200;'>WORKSPACE</h2>", unsafe_allow_html=True)
     if st.button("＋ NUEVA CONVERSACIÓN"):
@@ -83,10 +71,7 @@ with st.sidebar:
         st.session_state.messages = []
         st.rerun()
     st.divider()
-    
-    # Selector de Personalidad
-    modo = st.selectbox("Identidad Activa:", list(PERSONALIDADES.keys()))
-    
+    modo = st.selectbox("Identidad:", list(PERSONALIDADES.keys()))
     st.divider()
     st.markdown("<p style='color: #888;'>HISTORIAL CLOUD</p>", unsafe_allow_html=True)
     historial = cargar_nube()
@@ -96,34 +81,32 @@ with st.sidebar:
             st.rerun()
 
 # --- 5. CUERPO PRINCIPAL ---
-def enviar_comando(t):
+def enviar_c(t):
     st.session_state.messages.append({"role": "user", "content": t})
-    instruccion = PERSONALIDADES[modo]
     c = client.chat.completions.create(
-        messages=[{"role":"system","content": instruccion}] + st.session_state.messages,
+        messages=[{"role":"system","content": PERSONALIDADES[modo]}] + st.session_state.messages,
         model="llama-3.3-70b-versatile"
     )
     st.session_state.messages.append({"role": "assistant", "content": c.choices[0].message.content})
 
 col1, col2, col3, col4 = st.columns(4)
 with col1: 
-    if st.button("📝 Email"): enviar_comando("Redacta un correo profesional impecable."); st.rerun()
+    if st.button("📝 Email"): enviar_c("Redacta un correo profesional."); st.rerun()
 with col2: 
-    if st.button("⚖️ Análisis"): enviar_comando("Realiza un análisis profesional profundo."); st.rerun()
+    if st.button("⚖️ Análisis"): enviar_c("Realiza un análisis experto."); st.rerun()
 with col3: 
-    if st.button("📦 Amazon"): enviar_comando("Optimiza el SEO para un listado de Amazon."); st.rerun()
+    if st.button("📦 Amazon"): enviar_c("Optimiza SEO Amazon."); st.rerun()
 with col4: 
-    if st.button("💡 Estrategia"): enviar_comando("Propón una idea de negocio disruptiva."); st.rerun()
+    if st.button("💡 Estrategia"): enviar_c("Propón una idea disruptiva."); st.rerun()
 
 st.divider()
 
-# Mostrar Chat con Logo Fijo
 for msg in st.session_state.messages:
     av = ruth_avatar if msg["role"] == "assistant" else None
     with st.chat_message(msg["role"], avatar=av):
         st.markdown(msg["content"])
 
-if prompt := st.chat_input(f"Hablando con RUTH {modo}..."):
+if prompt := st.chat_input(f"Consultando a RUTH {modo}..."):
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"): st.markdown(prompt)
     with st.chat_message("assistant", avatar=ruth_avatar):
