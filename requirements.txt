@@ -3,3 +3,4 @@ groq
 supabase
 PyPDF2
 streamlit-google-auth
+fpdf2
