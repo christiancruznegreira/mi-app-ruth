@@ -5,11 +5,17 @@ from fpdf import FPDF
 import os
 import datetime
 
-# --- 1. ESTÉTICA MINIMALISTA ELITE (NEÓN ROJO) ---
-st.set_page_config(page_title="RUTH Pro", page_icon="●", layout="wide", initial_sidebar_state="expanded")
+# --- 1. CONFIGURACIÓN Y ESTÉTICA PREMIUM MINIMALISTA ---
+st.set_page_config(
+    page_title="RUTH Professional", 
+    page_icon="●", 
+    layout="wide", 
+    initial_sidebar_state="expanded"
+)
 
 st.markdown("""
     <style>
+    /* Fondo con Patrón Unificado */
     [data-testid="stAppViewContainer"], [data-testid="stSidebar"], .stSidebarContent {
         background-color: #0e1117 !important;
         background-image: radial-gradient(#1a1d24 1px, transparent 1px) !important;
@@ -17,6 +23,7 @@ st.markdown("""
     }
     header, footer, .viewerBadge_container__1QS1n { visibility: hidden; }
 
+    /* EFECTO NEÓN ROJO ROTO (Título Gigante) */
     @keyframes flicker {
         0%, 18%, 22%, 25%, 53%, 57%, 100% {
             text-shadow: 0 0 4px #f00, 0 0 11px #f00, 0 0 19px #f00, 0 0 40px #f00, 0 0 80px #f00;
@@ -24,28 +31,44 @@ st.markdown("""
         }
         20%, 24%, 55% { text-shadow: none; color: #330000; }
     }
-    .ruth-header { text-align: center; padding-top: 1rem; color: #ff4b4b; font-size: 5.5rem; animation: flicker 3s infinite alternate; font-weight: 100; letter-spacing: 1.5rem; margin-bottom: 0px;}
-    .ruth-subtitle { text-align: center; color: #888; font-size: 0.8rem; letter-spacing: 0.3rem; margin-top: -10px; margin-bottom: 3rem;}
+    .ruth-header { 
+        text-align: center; padding-top: 1rem; color: #ff4b4b; font-size: 5.5rem; 
+        animation: flicker 3s infinite alternate; font-weight: 100; letter-spacing: 1.5rem; 
+        margin-bottom: 0px;
+    }
+    .ruth-subtitle { 
+        text-align: center; color: #888; font-size: 0.8rem; letter-spacing: 0.3rem; 
+        margin-top: -15px; margin-bottom: 3rem; font-weight: bold;
+    }
 
-    /* Botones Minimalistas sin Emojis */
+    /* BOTONES MINIMALISTAS AJUSTADOS */
     .stButton>button {
-        border-radius: 10px !important;
+        border-radius: 8px !important;
         border: 1px solid #ff4b4b !important;
         background-color: rgba(255, 75, 75, 0.05) !important;
         color: white !important;
         width: 100%;
+        height: 45px !important;
         transition: 0.3s;
         text-transform: uppercase;
-        letter-spacing: 0.1rem;
-        font-size: 0.75rem !important;
-        font-weight: 200 !important;
+        letter-spacing: 0.05rem;
+        font-size: 0.65rem !important;
+        font-weight: 300 !important;
+        padding: 0px 5px !important;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        white-space: nowrap;
+        overflow: hidden;
     }
     .stButton>button:hover {
         background-color: #ff4b4b !important;
         box-shadow: 0px 0px 20px rgba(255, 75, 75, 0.6) !important;
     }
+
     div[data-testid="stMarkdownContainer"] p { color: #e0e0e0 !important; }
     </style>
+    
     <div class="ruth-header">R U T H</div>
     <div class="ruth-subtitle">UNIVERSAL BUSINESS SUITE</div>
 """, unsafe_allow_html=True)
@@ -69,24 +92,31 @@ def generar_pdf_bytes(mensajes, modo):
         pdf.ln(4)
     return bytes(pdf.output())
 
-# --- 3. CONEXIONES ---
+# --- 3. CONEXIONES (GROQ Y SUPABASE) ---
 client = Groq(api_key=st.secrets["GROQ_API_KEY"].strip())
 supabase = create_client(st.secrets["SUPABASE_URL"], st.secrets["SUPABASE_KEY"])
 icon_path = "logo_ruth.png"
 ruth_avatar = icon_path if os.path.exists(icon_path) else "●"
 
-PERSONALIDADES = {"Abogada": "RUTH Legal Advisor.", "Amazon Pro": "RUTH Amazon Strategist.", "Marketing": "RUTH Copywriter.", "Estratega": "RUTH CEO Advisor.", "Médico": "RUTH Médica.", "Anime": "RUTH Anime."}
+PERSONALIDADES = {
+    "Abogada": "Eres RUTH Legal Advisor. Formal y técnica.",
+    "Amazon Pro": "Eres RUTH Amazon Strategist. SEO y ventas.",
+    "Marketing": "Eres RUTH Copywriter. Creativa y persuasiva.",
+    "Estratega": "Eres RUTH CEO Advisor. Estrategia y escalabilidad.",
+    "Médico": "Eres RUTH Medical Specialist. Empática y científica.",
+    "Anime": "Eres RUTH Otaku Sensei. Experta en anime."
+}
 
 if "messages" not in st.session_state: st.session_state.messages = []
 
-# --- 4. BARRA LATERAL ---
+# --- 4. BARRA LATERAL (WORKSPACE) ---
 with st.sidebar:
     st.markdown("<h2 style='color: white; font-weight: 200;'>WORKSPACE</h2>", unsafe_allow_html=True)
     if st.button("＋ NUEVA CONVERSACIÓN"):
         st.session_state.messages = []
         st.rerun()
     
-    # Botón PDF Recuperado
+    # Exportación PDF
     if st.session_state.messages:
         st.divider()
         try:
@@ -95,7 +125,7 @@ with st.sidebar:
         except: pass
 
     st.divider()
-    modo = st.selectbox("Especialidad:", list(PERSONALIDADES.keys()))
+    modo = st.selectbox("Especialidad Activa:", list(PERSONALIDADES.keys()))
     
     st.divider()
     st.markdown("<p style='color: #888; font-size: 0.7rem;'>HISTORIAL CLOUD</p>", unsafe_allow_html=True)
@@ -107,7 +137,7 @@ with st.sidebar:
                 st.rerun()
     except: pass
 
-# --- 5. CUERPO PRINCIPAL (BOTONES MINIMALISTAS) ---
+# --- 5. CUERPO PRINCIPAL (BOTONES RÁPIDOS) ---
 def enviar_c(t):
     st.session_state.messages.append({"role": "user", "content": t})
     c = client.chat.completions.create(messages=[{"role":"system","content": PERSONALIDADES[modo]}] + st.session_state.messages, model="llama-3.3-70b-versatile")
@@ -115,7 +145,7 @@ def enviar_c(t):
 
 cols = st.columns(6)
 labels = ["REDACCIÓN", "LEGAL", "AMAZON", "ESTRATEGIA", "SALUD", "ANIME"]
-prompts = ["Redacta un correo profesional.", "Análisis experto.", "SEO Amazon.", "Idea disruptiva.", "Consulta médica.", "Recomendación."]
+prompts = ["Redacta un correo profesional.", "Análisis experto.", "SEO Amazon.", "Idea disruptiva.", "Consulta médica.", "Recomendación anime."]
 
 for i in range(6):
     with cols[i]:
@@ -123,12 +153,13 @@ for i in range(6):
 
 st.divider()
 
+# --- 6. CHAT ---
 for msg in st.session_state.messages:
     av = ruth_avatar if msg["role"] == "assistant" else None
     with st.chat_message(msg["role"], avatar=av):
         st.markdown(msg["content"])
 
-if prompt := st.chat_input(f"Consultando a RUTH {modo}..."):
+if prompt := st.chat_input(f"Hablando con RUTH {modo}..."):
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"): st.markdown(prompt)
     with st.chat_message("assistant", avatar=ruth_avatar):
