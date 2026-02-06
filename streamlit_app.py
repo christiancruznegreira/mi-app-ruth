@@ -20,8 +20,8 @@ st.markdown("""
 
     /* Animación de Parpadeo Rojo para el Hover */
     @keyframes text-flicker {
-        0%, 100% { color: #ff4b4b; text-shadow: 0 0 10px #ff0000; opacity: 1; }
-        50% { color: #880000; text-shadow: none; opacity: 0.7; }
+        0%, 100% { color: #ff4b4b; text-shadow: 0 0 8px #ff0000; opacity: 1; }
+        50% { color: #660000; text-shadow: none; opacity: 0.8; }
     }
 
     /* Título Neón Rojo */
@@ -35,27 +35,36 @@ st.markdown("""
     .ruth-header { text-align: center; padding-top: 1rem; color: #ff4b4b; font-size: 5rem; animation: flicker 3s infinite alternate; font-weight: 100; letter-spacing: 1.2rem; }
     .ruth-subtitle { text-align: center; color: #888; font-size: 0.8rem; letter-spacing: 0.3rem; margin-top: -10px; margin-bottom: 3rem; font-weight: bold;}
 
-    /* BOTONES TIPO TEXTO (SIN RECUADRO) */
+    /* AJUSTE DE COLUMNAS PARA GANAR ESPACIO */
+    [data-testid="column"] {
+        padding: 0px 1px !important; /* Espacio mínimo entre columnas */
+        text-align: center !important;
+    }
+
+    /* BOTONES TIPO TEXTO (MEJORADOS) */
     .stButton>button {
         border: none !important;
         background-color: transparent !important;
-        color: #888 !important; /* Texto gris por defecto */
+        color: #aaaaaa !important; 
         width: 100% !important;
         height: 40px !important;
-        transition: 0.3s ease;
+        transition: 0.2s ease;
         text-transform: uppercase;
-        font-size: 0.6rem !important;
+        
+        /* FUENTE Y BLOQUEO DE SALTO DE LÍNEA */
+        font-size: 0.52rem !important; 
         font-weight: 400 !important;
-        letter-spacing: 0.1rem;
+        letter-spacing: 0.02rem !important; /* Espaciado mínimo */
+        white-space: nowrap !important; /* PROHIBIDO ROMPER LA PALABRA */
+        overflow: visible !important;
         cursor: pointer;
+        display: block !important;
     }
     
-    /* Efecto al pasar el ratón */
     .stButton>button:hover {
-        animation: text-flicker 0.5s infinite; /* Parpadeo rápido al señalar */
+        animation: text-flicker 0.4s infinite;
         background-color: transparent !important;
         border: none !important;
-        box-shadow: none !important;
     }
 
     div[data-testid="stMarkdownContainer"] p { color: #e0e0e0 !important; }
@@ -64,7 +73,7 @@ st.markdown("""
     <div class="ruth-subtitle">UNIVERSAL BUSINESS SUITE</div>
 """, unsafe_allow_html=True)
 
-# --- 2. LOGICA DE PDF ---
+# --- 2. LÓGICA DE EXPORTACIÓN PDF ---
 def generar_pdf_bytes(mensajes, modo):
     pdf = FPDF()
     pdf.add_page()
@@ -88,13 +97,13 @@ icon_path = "logo_ruth.png"
 ruth_avatar = icon_path if os.path.exists(icon_path) else "●"
 
 PERSONALIDADES = {
-    "Abogada": "Eres RUTH Legal Advisor. Tono formal.",
-    "Amazon Pro": "Eres RUTH Amazon Strategist. SEO y ventas.",
-    "Marketing": "Eres RUTH Copywriter. Persuasiva.",
-    "Estratega": "Eres RUTH CEO Advisor. Visión ejecutiva.",
-    "Médico": "Eres RUTH Médico. Científica.",
-    "Estudiante": "Eres RUTH Tutor Académico. Didáctica.",
-    "Anime": "Eres RUTH Otaku Sensei. Cultura japonesa."
+    "Abogada": "RUTH Legal Advisor.",
+    "Amazon Pro": "RUTH Amazon Strategist.",
+    "Marketing": "RUTH Copywriter.",
+    "Estratega": "RUTH CEO Advisor.",
+    "Médico": "RUTH Médico.",
+    "Estudiante": "RUTH Tutor Académico.",
+    "Anime": "RUTH Otaku Sensei."
 }
 
 def guardar_nube(mensajes):
@@ -123,7 +132,7 @@ with st.sidebar:
     modo = st.selectbox("Especialidad:", list(PERSONALIDADES.keys()))
     
     st.divider()
-    st.markdown("<p style='color: #888;'>HISTORIAL CLOUD</p>", unsafe_allow_html=True)
+    st.markdown("<p style='color: #888; font-size: 0.7rem;'>HISTORIAL CLOUD</p>", unsafe_allow_html=True)
     try:
         res = supabase.table("chats").select("*").eq("user_email", "Invitado").order("created_at", desc=True).limit(5).execute()
         for chat in res.data:
@@ -132,7 +141,7 @@ with st.sidebar:
                 st.rerun()
     except: pass
 
-# --- 5. CUERPO (7 BOTONES TIPO GHOST) ---
+# --- 5. CUERPO (7 BOTONES TEXT-ONLY CORREGIDOS) ---
 def enviar_c(t):
     st.session_state.messages.append({"role": "user", "content": t})
     c = client.chat.completions.create(messages=[{"role":"system","content": PERSONALIDADES[modo]}] + st.session_state.messages, model="llama-3.3-70b-versatile")
@@ -144,7 +153,9 @@ prompts = ["Redacta un correo.", "Análisis legal.", "SEO Amazon.", "Estrategia.
 
 for i in range(7):
     with cols[i]:
-        if st.button(labels[i]): enviar_c(prompts[i]); st.rerun()
+        if st.button(labels[i]): 
+            enviar_c(prompts[i])
+            st.rerun()
 
 st.divider()
 
