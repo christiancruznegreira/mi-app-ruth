@@ -1,111 +1,102 @@
 import streamlit as st
 from groq import Groq
+from supabase import create_client, Client
 import os
 import datetime
-from PyPDF2 import PdfReader
 
 # 1. CONFIGURACIÓN Y ESTÉTICA PREMIUM
-st.set_page_config(page_title="RUTH Ultra", page_icon="●", layout="wide")
+st.set_page_config(page_title="RUTH Professional", page_icon="●", layout="wide")
 
 st.markdown("""
     <style>
-    /* Fondo con Patrón */
     [data-testid="stAppViewContainer"], [data-testid="stSidebar"] {
         background-color: #0e1117 !important;
         background-image: radial-gradient(#1a1d24 1px, transparent 1px) !important;
         background-size: 30px 30px !important;
     }
-
-    /* Ocultar elementos de Streamlit */
-    header, footer, .viewerBadge_container__1QS1n { visibility: hidden !important; }
-
-    /* Branding RUTH */
+    header, footer, .viewerBadge_container__1QS1n { visibility: hidden; }
     .ruth-header { text-align: center; color: #ff4b4b; font-size: 3.5rem; letter-spacing: 0.8rem; font-weight: 200; margin-bottom: 0;}
     .ruth-subtitle { text-align: center; color: #888; font-size: 0.8rem; letter-spacing: 0.3rem; margin-top: -10px; margin-bottom: 2rem;}
-
-    /* Botones de Acción Rápida */
-    .stButton>button {
-        border-radius: 20px !important;
-        border: 1px solid #ff4b4b !important;
-        background-color: rgba(255, 75, 75, 0.05) !important;
-        color: white !important;
-        width: 100%;
-        transition: 0.3s;
-    }
-    .stButton>button:hover {
-        background-color: #ff4b4b !important;
-        box-shadow: 0px 0px 15px rgba(255, 75, 75, 0.3);
-    }
+    div[data-testid="stMarkdownContainer"] p { color: #e0e0e0 !important; }
     </style>
     <div class="ruth-header">R U T H</div>
-    <div class="ruth-subtitle">ULTRA PROFESSIONAL SUITE</div>
+    <div class="ruth-subtitle">UNIVERSAL BUSINESS SUITE</div>
 """, unsafe_allow_html=True)
 
-# 2. GESTIÓN DE MEMORIA
-if "messages" not in st.session_state: st.session_state.messages = []
-if "history" not in st.session_state: st.session_state.history = {}
+# 2. CONEXIÓN A SUPABASE (NUBE)
+@st.cache_resource
+def init_supabase():
+    url = st.secrets["SUPABASE_URL"]
+    key = st.secrets["SUPABASE_KEY"]
+    return create_client(url, key)
 
-# Función para procesar la orden del usuario
-def procesar_prompt(texto_usuario):
-    st.session_state.messages.append({"role": "user", "content": texto_usuario})
-    
-    # Llamada a la IA
-    client = Groq(api_key=st.secrets["GROQ_API_KEY"].strip())
-    sys_msg = "Eres RUTH, una IA profesional de élite. Responde con elegancia y precisión."
-    full_msgs = [{"role": "system", "content": sys_msg}] + st.session_state.messages
-    
+supabase = init_supabase()
+
+# Funciones de la Base de Datos
+def guardar_en_nube(mensajes):
     try:
-        completion = client.chat.completions.create(
-            messages=full_msgs,
-            model="llama-3.3-70b-versatile"
-        )
-        respuesta = completion.choices[0].message.content
-        st.session_state.messages.append({"role": "assistant", "content": respuesta})
+        supabase.table("chats").insert({
+            "user_email": "Invitado",
+            "messages": mensajes
+        }).execute()
     except Exception as e:
-        st.error(f"Error: {e}")
+        st.error(f"Error al guardar en nube: {e}")
 
-# 3. BARRA LATERAL
+def cargar_historial_nube():
+    try:
+        response = supabase.table("chats").select("*").eq("user_email", "Invitado").order("created_at", desc=True).limit(10).execute()
+        return response.data
+    except:
+        return []
+
+# 3. GESTIÓN DE MEMORIA LOCAL
+if "messages" not in st.session_state:
+    st.session_state.messages = []
+
+# 4. BARRA LATERAL
 with st.sidebar:
     st.markdown("<h2 style='color: white; font-weight: 200;'>WORKSPACE</h2>", unsafe_allow_html=True)
+    
     if st.button("＋ NUEVA CONVERSACIÓN"):
         if st.session_state.messages:
-            id_c = datetime.datetime.now().strftime("%H:%M")
-            st.session_state.history[f"Chat {id_c}"] = st.session_state.messages
+            guardar_en_nube(st.session_state.messages) # Guardamos antes de borrar
         st.session_state.messages = []
         st.rerun()
-    
+
     st.divider()
-    uploaded_file = st.file_uploader("📄 Analizador de PDF", type="pdf")
+    st.markdown("### ☁️ CLOUD HISTORY")
+    historial = cargar_historial_nube()
+    for chat in historial:
+        fecha_formato = chat['created_at'][:16].replace("T", " ")
+        if st.button(f"📜 Chat {fecha_formato}", key=chat['id']):
+            st.session_state.messages = chat['messages']
+            st.rerun()
 
-# 4. BOTONES DE ACCIÓN RÁPIDA (INTERFAZ)
-col1, col2, col3, col4 = st.columns(4)
+# 5. LÓGICA DE IA (GROQ)
+client = Groq(api_key=st.secrets["GROQ_API_KEY"].strip())
+icon_path = "logo_ruth.png"
+ruth_avatar = icon_path if os.path.exists(icon_path) else "●"
 
-# Aquí está la corrección: cada botón llama a la función procesar_prompt
-with col1:
-    if st.button("📝 Redactar Email"):
-        procesar_prompt("RUTH, redacta un email profesional elegante para un cliente importante.")
-        st.rerun()
-with col2:
-    if st.button("⚖️ Revisar Cláusula"):
-        procesar_prompt("RUTH, analicemos esta cláusula legal. ¿Es segura y estándar?")
-        st.rerun()
-with col3:
-    if st.button("📦 SEO Amazon"):
-        procesar_prompt("RUTH, optimiza el SEO de este producto para Amazon: incluye título, bullet points y keywords.")
-        st.rerun()
-with col4:
-    if st.button("💡 Nueva Estrategia"):
-        procesar_prompt("RUTH, propón una estrategia de negocio disruptiva para aumentar las ventas este mes.")
-        st.rerun()
-
-st.divider()
-
-# 5. MOSTRAR CHAT
 for msg in st.session_state.messages:
-    with st.chat_message(msg["role"]):
+    with st.chat_message(msg["role"], avatar=(ruth_avatar if msg["role"]=="assistant" else None)):
         st.markdown(msg["content"])
 
-# Entrada de texto manual
-if prompt := st.chat_input("Consulta a RUTH Ultra..."):
-    procesar_prompt(prompt)
-    st.rerun()
+if prompt := st.chat_input("Consulta a RUTH Professional..."):
+    st.session_state.messages.append({"role": "user", "content": prompt})
+    with st.chat_message("user"):
+        st.markdown(prompt)
+
+    with st.chat_message("assistant", avatar=ruth_avatar):
+        try:
+            completion = client.chat.completions.create(
+                messages=[{"role": "system", "content": "Eres RUTH, una IA profesional."}] + st.session_state.messages,
+                model="llama-3.3-70b-versatile"
+            )
+            res = completion.choices[0].message.content
+            st.markdown(res)
+            st.session_state.messages.append({"role": "assistant", "content": res})
+            
+            # Guardado automático opcional tras cada respuesta
+            # guardar_en_nube(st.session_state.messages) 
+        except Exception as e:
+            st.error(f"Error: {e}")
