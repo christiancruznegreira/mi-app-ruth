@@ -4,9 +4,10 @@ from groq import Groq
 # Configuración de página minimalista
 st.set_page_config(page_title="RUTH", page_icon="●")
 
-st.markdown("<h1 style='text-align: center; font-weight: 200;'>R U T H</h1>", uunsafe_allow_html=True)
+# Título de la app
+st.markdown("<h1 style='text-align: center; font-weight: 200;'>R U T H</h1>", unsafe_allow_html=True)
 
-# Conexión con la llave que obtuviste en el paso 1
+# Conexión con la llave secreta
 client = Groq(api_key=st.secrets["GROQ_API_KEY"])
 
 if "messages" not in st.session_state:
@@ -17,7 +18,7 @@ for message in st.session_state.messages:
         with st.chat_message(message["role"]):
             st.markdown(message["content"])
 
-if prompt := st.chat_input("¿Qué necesitas?"):
+if prompt := st.chat_input("¿En qué puedo ayudarte?"):
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
         st.markdown(prompt)
