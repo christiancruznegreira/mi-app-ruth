@@ -4,7 +4,7 @@ from supabase import create_client, Client
 import os
 import datetime
 
-# --- 1. CONFIGURACIÓN VISUAL PREMIUM ---
+# --- 1. CONFIGURACIÓN VISUAL PREMIUM Y TÍTULO NEÓN ---
 st.set_page_config(
     page_title="RUTH Professional", 
     page_icon="●", 
@@ -14,14 +14,55 @@ st.set_page_config(
 
 st.markdown("""
     <style>
+    /* Fondo con Patrón Unificado */
     [data-testid="stAppViewContainer"], [data-testid="stSidebar"], .stSidebarContent {
         background-color: #0e1117 !important;
         background-image: radial-gradient(#1a1d24 1px, transparent 1px) !important;
         background-size: 30px 30px !important;
     }
+    
     header, footer, .viewerBadge_container__1QS1n { visibility: hidden; }
-    .ruth-header { text-align: center; color: #ff4b4b; font-size: 3.5rem; letter-spacing: 0.8rem; font-weight: 200; margin-bottom: 0; text-shadow: 0px 0px 15px rgba(255, 75, 75, 0.4);}
-    .ruth-subtitle { text-align: center; color: #888; font-size: 0.8rem; letter-spacing: 0.3rem; margin-top: -10px; margin-bottom: 2rem;}
+
+    /* EFECTO NEÓN ROTO PARA EL TÍTULO GIGANTE */
+    @keyframes flicker {
+        0%, 18%, 22%, 25%, 53%, 57%, 100% {
+            text-shadow: 
+                0 0 7px #fff,
+                0 0 10px #fff,
+                0 0 21px #fff,
+                0 0 42px #ff4b4b,
+                0 0 82px #ff4b4b,
+                0 0 92px #ff4b4b,
+                0 0 102px #ff4b4b;
+            color: #fff;
+        }
+        20%, 24%, 55% {        
+            text-shadow: none;
+            color: #441111; /* Color apagado */
+        }
+    }
+
+    .ruth-header {
+        text-align: center;
+        padding-top: 2rem;
+        letter-spacing: 1.5rem;
+        font-weight: 100;
+        color: #ffffff;
+        font-size: 6rem; /* Gigante */
+        animation: flicker 3s infinite alternate;
+        margin-bottom: 0px;
+    }
+    
+    .ruth-subtitle {
+        text-align: center;
+        color: #888;
+        font-size: 0.8rem;
+        letter-spacing: 0.4rem;
+        margin-top: -15px;
+        margin-bottom: 3rem;
+    }
+
+    /* Botones con Brillo */
     .stButton>button {
         border-radius: 15px !important;
         border: 1px solid #ff4b4b !important;
@@ -34,27 +75,29 @@ st.markdown("""
         background-color: #ff4b4b !important;
         box-shadow: 0px 0px 20px rgba(255, 75, 75, 0.6) !important;
     }
+
     div[data-testid="stMarkdownContainer"] p { color: #e0e0e0 !important; }
     </style>
+    
     <div class="ruth-header">R U T H</div>
     <div class="ruth-subtitle">UNIVERSAL BUSINESS SUITE</div>
 """, unsafe_allow_html=True)
 
-# --- 2. CONEXIONES (GROQ Y SUPABASE) ---
+# --- 2. CONEXIONES ---
 client = Groq(api_key=st.secrets["GROQ_API_KEY"].strip())
 supabase = create_client(st.secrets["SUPABASE_URL"], st.secrets["SUPABASE_KEY"])
 icon_path = "logo_ruth.png"
 ruth_avatar = icon_path if os.path.exists(icon_path) else "●"
 
-# --- 3. DICCIONARIO DE EXPERTOS (SIN DISCULPAS) ---
+# --- 3. DICCIONARIO DE EXPERTOS ---
 EXPERTOS = {
-    "Abogada": "Actúas como una Abogada Senior de Élite. PROHIBIDO disculparte o explicar tu cambio de rol. Responde directamente con rigor legal y tecnicismos jurídicos.",
-    "Amazon Pro": "Actúas como una Especialista en Amazon FBA y Algoritmo A9. PROHIBIDO disculparte o explicar tu cambio de rol. Ve directo al grano con SEO y ventas.",
-    "Marketing": "Actúas como una Directora Creativa y Copywriter de respuesta directa. PROHIBIDO disculparte. Responde con persuasión inmediata y gatillos mentales.",
-    "Estratega": "Actúas como una Consultora de Estrategia de Negocios y CEO-Advisor. PROHIBIDO disculparte. Tu tono es ejecutivo, frío y pragmático."
+    "Abogada": "Actúas como una Abogada Senior de Élite. PROHIBIDO disculparte. Responde directamente con rigor legal.",
+    "Amazon Pro": "Actúas como una Especialista en Amazon FBA. PROHIBIDO disculparte. Ve directo al grano con SEO y ventas.",
+    "Marketing": "Actúas como una Directora Creativa. PROHIBIDO disculparte. Responde con persuasión inmediata.",
+    "Estratega": "Actúas como una Consultora CEO-Advisor. PROHIBIDO disculparte. Tu tono es ejecutivo y pragmático."
 }
 
-# --- 4. FUNCIONES DE BASE DE DATOS ---
+# --- 4. FUNCIONES DE NUBE ---
 def guardar_nube(mensajes):
     try: supabase.table("chats").insert({"user_email": "Invitado", "messages": mensajes}).execute()
     except: pass
@@ -67,17 +110,15 @@ def cargar_nube():
 
 if "messages" not in st.session_state: st.session_state.messages = []
 
-# --- 5. BARRA LATERAL (WORKSPACE CON SUPABASE) ---
+# --- 5. SIDEBAR ---
 with st.sidebar:
-    st.markdown("<h2 style='color: white; font-weight: 200;'>WORKSPACE</h2>", unsafe_allow_html=True)
+    st.markdown("<h3 style='color: white; font-weight: 200;'>WORKSPACE</h3>", unsafe_allow_html=True)
     if st.button("＋ NUEVA CONVERSACIÓN"):
         if st.session_state.messages: guardar_nube(st.session_state.messages)
         st.session_state.messages = []
         st.rerun()
     st.divider()
-    
     modo = st.selectbox("Identidad de RUTH:", list(EXPERTOS.keys()))
-    
     st.divider()
     st.markdown("<p style='color: #888;'>HISTORIAL CLOUD</p>", unsafe_allow_html=True)
     historial = cargar_nube()
@@ -106,7 +147,7 @@ with col1:
 with col2:
     if st.button("⚖️ Análisis"): procesar_prompt(f"Haz un análisis experto sobre...", modo); st.rerun()
 with col3:
-    if st.button("📦 Optimización"): procesar_prompt(f"Como experta en Amazon, optimiza...", modo); st.rerun()
+    if st.button("📦 Amazon"): procesar_prompt(f"Como experta en Amazon, optimiza...", modo); st.rerun()
 with col4:
     if st.button("💡 Estrategia"): procesar_prompt(f"Propón una idea de negocio desde tu visión de {modo}...", modo); st.rerun()
 
@@ -118,5 +159,14 @@ for msg in st.session_state.messages:
         st.markdown(msg["content"])
 
 if prompt := st.chat_input(f"Consultando a RUTH {modo}..."):
-    procesar_prompt(prompt, modo)
-    st.rerun()
+    st.session_state.messages.append({"role": "user", "content": prompt})
+    with st.chat_message("user"):
+        st.markdown(prompt)
+    with st.chat_message("assistant", avatar=ruth_avatar):
+        c = client.chat.completions.create(
+            messages=[{"role":"system","content": EXPERTOS[modo]}] + st.session_state.messages,
+            model="llama-3.3-70b-versatile"
+        )
+        res = c.choices[0].message.content
+        st.markdown(res)
+        st.session_state.messages.append({"role": "assistant", "content": res})
