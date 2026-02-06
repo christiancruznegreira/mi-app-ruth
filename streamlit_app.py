@@ -4,8 +4,8 @@ from supabase import create_client, Client
 import os
 import datetime
 
-# --- 1. ESTÉTICA PREMIUM (Mantenemos el Neón) ---
-st.set_page_config(page_title="RUTH Professional", page_icon="●", layout="wide", initial_sidebar_state="expanded")
+# --- 1. ESTÉTICA PREMIUM (NEÓN Y PATRÓN) ---
+st.set_page_config(page_title="RUTH Pro", page_icon="●", layout="wide", initial_sidebar_state="expanded")
 
 st.markdown("""
     <style>
@@ -17,12 +17,12 @@ st.markdown("""
     header, footer { visibility: hidden; }
     @keyframes flicker {
         0%, 18%, 22%, 25%, 53%, 57%, 100% {
-            text-shadow: 0 0 4px #f00, 0 0 11px #f00, 0 0 19px #f00, 0 0 40px #f00, 0 0 80px #f00;
+            text-shadow: 0 0 4px #f00, 0 0 11px #f00, 0 0 19px #f00, 0 0 40px #f00;
             color: #ff4b4b;
         }
         20%, 24%, 55% { text-shadow: none; color: #330000; }
     }
-    .ruth-header { text-align: center; padding-top: 1rem; color: #ff4b4b; font-size: 5.5rem; animation: flicker 3s infinite alternate; font-weight: 100; letter-spacing: 1.5rem; margin-bottom: 0px;}
+    .ruth-header { text-align: center; color: #ff4b4b; font-size: 5.5rem; animation: flicker 3s infinite alternate; font-weight: 100; letter-spacing: 1.5rem; margin-bottom: 0px;}
     .ruth-subtitle { text-align: center; color: #888; font-size: 0.8rem; letter-spacing: 0.3rem; margin-top: -15px; margin-bottom: 3rem;}
     .stButton>button { border-radius: 12px !important; border: 1px solid #ff4b4b !important; background-color: rgba(255, 75, 75, 0.05) !important; color: white !important; width: 100%; transition: 0.3s; }
     .stButton>button:hover { background-color: #ff4b4b !important; box-shadow: 0px 0px 20px rgba(255, 75, 75, 0.6) !important; }
@@ -32,76 +32,74 @@ st.markdown("""
     <div class="ruth-subtitle">UNIVERSAL BUSINESS SUITE</div>
 """, unsafe_allow_html=True)
 
-# --- 2. CONEXIONES ---
+# --- 2. CONFIGURACIÓN DE IDENTIDAD Y CONEXIONES ---
+# Definimos el avatar una sola vez para que sea global
+icon_path = "logo_ruth.png"
+ruth_avatar = icon_path if os.path.exists(icon_path) else "●"
+
 client = Groq(api_key=st.secrets["GROQ_API_KEY"].strip())
 supabase = create_client(st.secrets["SUPABASE_URL"], st.secrets["SUPABASE_KEY"])
 
-# --- 3. FUNCIONES DE NUBE (GUARDAR Y CARGAR) ---
-def guardar_en_nube(mensajes):
-    if mensajes: # Solo guarda si hay algo escrito
-        try:
-            supabase.table("chats").insert({
-                "user_email": "Invitado",
-                "messages": mensajes
-            }).execute()
+def guardar_nube(mensajes):
+    if mensajes:
+        try: supabase.table("chats").insert({"user_email": "Invitado", "messages": mensajes}).execute()
         except: pass
 
-def cargar_de_nube():
-    try: 
+def cargar_nube():
+    try:
         res = supabase.table("chats").select("*").eq("user_email", "Invitado").order("created_at", desc=True).limit(5).execute()
         return res.data
     except: return []
 
 if "messages" not in st.session_state: st.session_state.messages = []
 
-# --- 4. BARRA LATERAL ---
+# --- 3. PANEL LATERAL (SIDEBAR) ---
 with st.sidebar:
     st.markdown("<h2 style='color: white; font-weight: 200;'>WORKSPACE</h2>", unsafe_allow_html=True)
-    
-    # EL CAMBIO ESTÁ AQUÍ: Primero guarda, luego limpia
     if st.button("＋ NUEVA CONVERSACIÓN"):
-        if st.session_state.messages:
-            guardar_en_nube(st.session_state.messages)
+        if st.session_state.messages: guardar_nube(st.session_state.messages)
         st.session_state.messages = []
         st.rerun()
-    
     st.divider()
     modo = st.selectbox("Identidad de RUTH:", ["Abogada", "Amazon Pro", "Marketing", "Estratega"])
     st.divider()
     st.markdown("<p style='color: #888;'>HISTORIAL CLOUD</p>", unsafe_allow_html=True)
-    historial = cargar_de_nube()
+    historial = cargar_nube()
     for chat in historial:
         if st.button(f"📜 Chat {chat['created_at'][11:16]}", key=chat['id']):
             st.session_state.messages = chat['messages']
             st.rerun()
 
-# --- 5. LÓGICA DE IA Y BOTONES ---
+# --- 4. CUERPO Y CHAT ---
 EXPERTOS = {"Abogada": "RUTH Abogada.", "Amazon Pro": "RUTH Amazon.", "Marketing": "RUTH Marketing.", "Estratega": "RUTH CEO."}
 
-def enviar_rapido(texto):
-    st.session_state.messages.append({"role": "user", "content": texto})
+def enviar_r(t):
+    st.session_state.messages.append({"role": "user", "content": t})
     c = client.chat.completions.create(messages=[{"role":"system","content": EXPERTOS[modo]}] + st.session_state.messages, model="llama-3.3-70b-versatile")
     st.session_state.messages.append({"role": "assistant", "content": c.choices[0].message.content})
 
 col1, col2, col3, col4 = st.columns(4)
 with col1: 
-    if st.button("📝 Email"): enviar_rapido("Redacta un email profesional."); st.rerun()
+    if st.button("📝 Email"): enviar_r("Redacta un email profesional."); st.rerun()
 with col2: 
-    if st.button("⚖️ Análisis"): enviar_rapido("Haz un análisis experto."); st.rerun()
+    if st.button("⚖️ Análisis"): enviar_r("Haz un análisis experto."); st.rerun()
 with col3: 
-    if st.button("📦 Amazon"): enviar_rapido("Optimiza SEO Amazon."); st.rerun()
+    if st.button("📦 Amazon"): enviar_r("Optimiza SEO Amazon."); st.rerun()
 with col4: 
-    if st.button("💡 Idea"): enviar_rapido("Idea disruptiva."); st.rerun()
+    if st.button("💡 Idea"): enviar_r("Idea disruptiva."); st.rerun()
 
 st.divider()
 
+# Aquí usamos el ruth_avatar global para que aparezca siempre la R roja
 for msg in st.session_state.messages:
-    with st.chat_message(msg["role"]): st.markdown(msg["content"])
+    av = ruth_avatar if msg["role"] == "assistant" else None
+    with st.chat_message(msg["role"], avatar=av):
+        st.markdown(msg["content"])
 
 if prompt := st.chat_input(f"Consultando a RUTH {modo}..."):
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"): st.markdown(prompt)
-    with st.chat_message("assistant"):
+    with st.chat_message("assistant", avatar=ruth_avatar):
         c = client.chat.completions.create(messages=[{"role":"system","content": EXPERTOS[modo]}] + st.session_state.messages, model="llama-3.3-70b-versatile")
         res = c.choices[0].message.content
         st.markdown(res)
