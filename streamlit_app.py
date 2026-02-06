@@ -20,7 +20,7 @@ st.markdown("""
     <div class="ruth-header">R U T H</div>
 """, unsafe_allow_html=True)
 
-# 2. BARRA LATERAL
+# 2. CONTROL LATERAL
 with st.sidebar:
     if st.button("Reiniciar Sistema"):
         st.session_state.messages = []
@@ -31,55 +31,63 @@ client = Groq(api_key=st.secrets["GROQ_API_KEY"].strip())
 icon_path = "logo_ruth.png"
 ruth_avatar = icon_path if os.path.exists(icon_path) else "●"
 
-# 4. MEMORIA REPROGRAMADA
+# 4. MEMORIA EQUILIBRADA
 if "messages" not in st.session_state or len(st.session_state.messages) == 0:
     st.session_state.messages = [
         {
             "role": "system", 
-            "content": "Eres RUTH. REGLA DE ORO: Si te piden una imagen, dibujo o foto, responde SOLAMENTE con la palabra 'DIBUJO:' y la descripción en inglés. Ejemplo: 'DIBUJO: a red car'. No digas nada más."
+            "content": "Eres RUTH, una asistente sofisticada. Habla de forma elegante. Si el usuario pide una imagen, dibujo o foto, acepta la petición y al FINAL de tu respuesta de texto escribe SIEMPRE: 'DIBUJO: [descripción detallada en inglés]'."
         }
     ]
 
-# Función de imagen
-def mostrar_imagen(texto_ia):
-    prompt_puro = texto_ia.replace("DIBUJO:", "").strip()
-    prompt_enc = urllib.parse.quote(prompt_puro)
-    seed = random.randint(1, 100000)
-    url = f"https://image.pollinations.ai/prompt/{prompt_enc}?width=1024&height=1024&seed={seed}&nologo=true"
-    st.image(url, caption=f"RUTH Visual: {prompt_puro}", use_container_width=True)
+# Función para generar URL de imagen
+def get_image_url(prompt_text):
+    clean_prompt = prompt_text.replace("DIBUJO:", "").strip()
+    prompt_enc = urllib.parse.quote(clean_prompt)
+    seed = random.randint(1, 99999)
+    return f"https://image.pollinations.ai/prompt/{prompt_enc}?width=1024&height=1024&seed={seed}&nologo=true"
 
 # 5. MOSTRAR CHAT
 for msg in st.session_state.messages:
     if msg["role"] != "system":
         with st.chat_message(msg["role"], avatar=(ruth_avatar if msg["role"]=="assistant" else None)):
+            # Si el mensaje tiene texto y comando de dibujo, separamos
             if "DIBUJO:" in msg["content"]:
-                mostrar_imagen(msg["content"])
+                texto, comando = msg["content"].split("DIBUJO:", 1)
+                if texto.strip(): st.markdown(texto)
+                st.image(get_image_url(comando), use_container_width=True)
             else:
                 st.markdown(msg["content"])
 
 # 6. INTERACCIÓN
-if prompt := st.chat_input("¿Qué ordenes tienes para RUTH?"):
+if prompt := st.chat_input("Escribe tu consulta..."):
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
         st.markdown(prompt)
 
     with st.chat_message("assistant", avatar=ruth_avatar):
         try:
-            # Forzamos a que piense que SÍ puede hacer imágenes
-            respuesta_ia = client.chat.completions.create(
+            # Llamada a la IA
+            response = client.chat.completions.create(
                 messages=st.session_state.messages,
                 model="llama-3.3-70b-versatile",
             ).choices[0].message.content
             
-            if "DIBUJO:" in respuesta_ia or "dibujo" in prompt.lower() or "imagen" in prompt.lower():
-                # Si la IA se resiste pero el usuario pidió imagen, forzamos el formato
-                if "DIBUJO:" not in respuesta_ia:
-                    respuesta_ia = f"DIBUJO: {prompt}"
-                
-                mostrar_imagen(respuesta_ia)
+            # Lógica Inteligente: ¿El usuario pidió una imagen?
+            user_pide_imagen = any(x in prompt.lower() for x in ["imagen", "dibujo", "foto", "dibuja", "crea"])
+            
+            if user_pide_imagen and "DIBUJO:" not in response:
+                # Si la IA olvidó el comando pero el usuario pidió imagen, se lo añadimos
+                response += f"\n\nDIBUJO: {prompt}"
+
+            # Mostrar resultado
+            if "DIBUJO:" in response:
+                texto, comando = response.split("DIBUJO:", 1)
+                if texto.strip(): st.markdown(texto)
+                st.image(get_image_url(comando), use_container_width=True)
             else:
-                st.markdown(respuesta_ia)
+                st.markdown(response)
                 
-            st.session_state.messages.append({"role": "assistant", "content": respuesta_ia})
+            st.session_state.messages.append({"role": "assistant", "content": response})
         except Exception as e:
             st.error(f"Error: {e}")
