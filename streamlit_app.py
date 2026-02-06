@@ -1,12 +1,12 @@
 import streamlit as st
 from groq import Groq
 from supabase import create_client, Client
-from fpdf import FPDF # Nueva librería para PDF
+from fpdf import FPDF
 import os
 import datetime
 
-# --- 1. ESTÉTICA PREMIUM RUTH ---
-st.set_page_config(page_title="RUTH Pro", page_icon="●", layout="wide", initial_sidebar_state="expanded")
+# --- 1. CONFIGURACIÓN Y ESTÉTICA ---
+st.set_page_config(page_title="RUTH Professional", page_icon="●", layout="wide", initial_sidebar_state="expanded")
 
 st.markdown("""
     <style>
@@ -24,7 +24,7 @@ st.markdown("""
         20%, 24%, 55% { text-shadow: none; color: #330000; }
     }
     .ruth-header { text-align: center; padding-top: 1rem; color: #ff4b4b; font-size: 5.5rem; animation: flicker 3s infinite alternate; font-weight: 100; letter-spacing: 1.5rem; margin-bottom: 0px;}
-    .ruth-subtitle { text-align: center; color: #888; font-size: 0.8rem; letter-spacing: 0.3rem; margin-top: -15px; margin-bottom: 3rem;}
+    .ruth-subtitle { text-align: center; color: #888; font-size: 0.8rem; letter-spacing: 0.3rem; margin-top: -10px; margin-bottom: 3rem;}
     .stButton>button { border-radius: 12px !important; border: 1px solid #ff4b4b !important; background-color: rgba(255, 75, 75, 0.05) !important; color: white !important; width: 100%; transition: 0.3s; font-size: 0.8rem !important; }
     .stButton>button:hover { background-color: #ff4b4b !important; box-shadow: 0px 0px 20px rgba(255, 75, 75, 0.6) !important; }
     div[data-testid="stMarkdownContainer"] p { color: #e0e0e0 !important; }
@@ -33,26 +33,28 @@ st.markdown("""
     <div class="ruth-subtitle">UNIVERSAL BUSINESS SUITE</div>
 """, unsafe_allow_html=True)
 
-# --- 2. FUNCION PARA GENERAR PDF ---
-def generar_pdf(mensajes, modo_actual):
+# --- 2. LOGICA DE PDF MEJORADA ---
+def generar_pdf_bytes(mensajes, modo):
     pdf = FPDF()
     pdf.add_page()
-    pdf.set_font("Arial", "B", 16)
-    pdf.cell(0, 10, "RUTH - REPORTE PROFESIONAL", ln=True, align="C")
-    pdf.set_font("Arial", "I", 10)
-    pdf.cell(0, 10, f"Fecha: {datetime.datetime.now().strftime('%d/%m/%Y %H:%M')} | Modo: {modo_actual}", ln=True, align="C")
+    pdf.set_font("Helvetica", "B", 16)
+    pdf.cell(0, 10, "REPORTE PROFESIONAL - RUTH", ln=True, align="C")
+    pdf.set_font("Helvetica", "I", 10)
+    pdf.cell(0, 10, f"Generado: {datetime.datetime.now().strftime('%d/%m/%Y %H:%M')} | Modo: {modo}", ln=True, align="C")
     pdf.ln(10)
     
     for msg in mensajes:
         rol = "USUARIO" if msg["role"] == "user" else "RUTH"
-        pdf.set_font("Arial", "B", 10)
+        pdf.set_font("Helvetica", "B", 10)
         pdf.cell(0, 8, f"{rol}:", ln=True)
-        pdf.set_font("Arial", "", 10)
-        # Multi_cell maneja párrafos largos
-        pdf.multi_cell(0, 6, msg["content"].encode('latin-1', 'replace').decode('latin-1'))
+        pdf.set_font("Helvetica", "", 10)
+        # Limpieza de caracteres para evitar errores de codificación
+        texto_limpio = msg["content"].encode('latin-1', 'replace').decode('latin-1')
+        pdf.multi_cell(0, 6, texto_limpio)
         pdf.ln(4)
     
-    return pdf.output(dest='S') # Retorna los bytes del PDF
+    # IMPORTANTE: Convertimos a bytes explícitamente para Streamlit
+    return bytes(pdf.output())
 
 # --- 3. CONEXIONES ---
 client = Groq(api_key=st.secrets["GROQ_API_KEY"].strip())
@@ -60,14 +62,7 @@ supabase = create_client(st.secrets["SUPABASE_URL"], st.secrets["SUPABASE_KEY"])
 icon_path = "logo_ruth.png"
 ruth_avatar = icon_path if os.path.exists(icon_path) else "●"
 
-PERSONALIDADES = {
-    "Abogada": "RUTH Legal Advisor.",
-    "Amazon Pro": "RUTH Amazon Strategist.",
-    "Marketing": "RUTH Copywriter.",
-    "Estratega": "RUTH CEO Advisor.",
-    "Médico": "RUTH Medical Specialist.",
-    "Anime": "RUTH Otaku Sensei."
-}
+PERSONALIDADES = {"Abogada": "RUTH Abogada.", "Amazon Pro": "RUTH Amazon.", "Marketing": "RUTH Marketing.", "Estratega": "RUTH CEO.", "Médico": "RUTH Médica.", "Anime": "RUTH Anime."}
 
 if "messages" not in st.session_state: st.session_state.messages = []
 
@@ -78,17 +73,20 @@ with st.sidebar:
         st.session_state.messages = []
         st.rerun()
     
-    # BOTÓN DE EXPORTACIÓN PDF
+    # DESCARGA DE PDF (CORREGIDA)
     if st.session_state.messages:
         st.divider()
         st.markdown("### 📥 EXPORTAR")
-        pdf_bytes = generar_pdf(st.session_state.messages, "General")
-        st.download_button(
-            label="📄 Descargar Chat en PDF",
-            data=pdf_bytes,
-            file_name=f"Reporte_RUTH_{datetime.datetime.now().strftime('%Y%m%d_%H%M')}.pdf",
-            mime="application/pdf"
-        )
+        try:
+            pdf_data = generar_pdf_bytes(st.session_state.messages, "General")
+            st.download_button(
+                label="📄 Descargar Chat (.pdf)",
+                data=pdf_data,
+                file_name=f"RUTH_Reporte_{datetime.datetime.now().strftime('%H%M')}.pdf",
+                mime="application/pdf"
+            )
+        except Exception as e:
+            st.error("Error al preparar PDF.")
 
     st.divider()
     modo = st.selectbox("Especialidad Activa:", list(PERSONALIDADES.keys()))
