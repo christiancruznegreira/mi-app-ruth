@@ -24,33 +24,30 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# --- 2. SISTEMA DE LOGIN (CORREGIDO PARA EVITAR TYPEERROR) ---
-# Extraemos los datos manualmente de los Secrets
-google_creds = st.secrets["GOOGLE_AUTH"]
-
+# --- 2. SISTEMA DE LOGIN (VERSIÓN BLINDADA) ---
 auth = Authenticate(
-    secret_name='GOOGLE_AUTH',
-    client_id=google_creds['client_id'],
-    client_secret=google_creds['client_secret'],
-    redirect_uri=google_creds['redirect_uri'],
-    cookie_name='ruth_session_cookie',
-    key=google_creds['cookie_key'],
-    cookie_expiry_days=30,
+    client_id=st.secrets["G_CLIENT_ID"],
+    client_secret=st.secrets["G_CLIENT_SECRET"],
+    redirect_uri=st.secrets["G_REDIRECT_URI"],
+    cookie_name="ruth_session",
+    key=st.secrets["G_COOKIE_KEY"],
+    cookie_expiry_days=30
 )
 
+# Verificar sesión
 auth.check_authenticator()
 
 if not st.session_state.get('connected'):
     st.markdown('<div class="ruth-header">R U T H</div>', unsafe_allow_html=True)
     st.markdown('<div class="ruth-subtitle">INTELIGENCIA ARTIFICIAL PARA PROFESIONALES</div>', unsafe_allow_html=True)
-    st.markdown("<h3 style='text-align: center; color: white; font-weight: 200; margin-top: 50px;'>Acceso al Ecosistema</h3>", unsafe_allow_html=True)
+    st.markdown("<h3 style='text-align: center; color: white; font-weight: 200; margin-top: 50px;'>Acceso al Sistema</h3>", unsafe_allow_html=True)
     
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
         auth.login() 
     st.stop()
 
-# --- SI ESTÁ CONECTADO, OBTENEMOS DATOS ---
+# --- SI ESTÁ CONECTADO, CONTINÚA ---
 user_email = st.session_state['user_info'].get('email')
 user_name = st.session_state['user_info'].get('name', 'Profesional')
 
@@ -61,10 +58,10 @@ icon_path = "logo_ruth.png"
 ruth_avatar = icon_path if os.path.exists(icon_path) else "●"
 
 EXPERTOS = {
-    "Abogada": "Eres RUTH Abogada Senior. Rigurosa y técnica.",
-    "Amazon Pro": "Eres RUTH Amazon Experta. Comercial y estratégica.",
-    "Marketing": "Eres RUTH Directora de Marketing. Creativa y persuasiva.",
-    "Estratega": "Eres RUTH Business Estratega. Ejecutiva y fría."
+    "Abogada": "Eres RUTH Abogada. Profesional y técnica.",
+    "Amazon Pro": "Eres RUTH Amazon Experta. Estratégica.",
+    "Marketing": "Eres RUTH Directora Marketing. Persuasiva.",
+    "Estratega": "Eres RUTH CEO Strategist. Ejecutiva."
 }
 
 def guardar_nube(mensajes):
@@ -81,7 +78,7 @@ if "messages" not in st.session_state: st.session_state.messages = []
 
 # --- 4. BARRA LATERAL ---
 with st.sidebar:
-    st.markdown(f"<p style='color: #ff4b4b; font-weight: bold;'>Hola, {user_name}</p>", unsafe_allow_html=True)
+    st.markdown(f"<p style='color: #ff4b4b; font-weight: bold;'>{user_name}</p>", unsafe_allow_html=True)
     if st.button("＋ NUEVA CONVERSACIÓN"):
         if st.session_state.messages: guardar_nube(st.session_state.messages)
         st.session_state.messages = []
@@ -91,7 +88,7 @@ with st.sidebar:
     modo = st.selectbox("Especialidad:", list(EXPERTOS.keys()))
     
     st.divider()
-    st.markdown("<p style='color: #888; font-size: 0.8rem;'>TU HISTORIAL EN NUBE</p>", unsafe_allow_html=True)
+    st.markdown("<p style='color: #888; font-size: 0.8rem;'>HISTORIAL CLOUD</p>", unsafe_allow_html=True)
     historial = cargar_nube()
     for chat in historial:
         fecha = chat['created_at'][11:16]
@@ -105,13 +102,13 @@ with st.sidebar:
 
 # --- 5. CUERPO PRINCIPAL ---
 st.markdown('<div class="ruth-header">R U T H</div>', unsafe_allow_html=True)
-st.markdown(f'<div class="ruth-subtitle">MÓDULO {modo.upper()} ACTIVO</div>', unsafe_allow_html=True)
+st.markdown(f'<div class="ruth-subtitle">MÓDULO {modo.upper()}</div>', unsafe_allow_html=True)
 
 for msg in st.session_state.messages:
     with st.chat_message(msg["role"], avatar=(ruth_avatar if msg["role"]=="assistant" else None)):
         st.markdown(msg["content"])
 
-if prompt := st.chat_input(f"¿En qué puede ayudarte RUTH hoy?"):
+if prompt := st.chat_input("Escribe tu consulta profesional..."):
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
         st.markdown(prompt)
@@ -123,4 +120,3 @@ if prompt := st.chat_input(f"¿En qué puede ayudarte RUTH hoy?"):
         res = c.choices[0].message.content
         st.markdown(res)
         st.session_state.messages.append({"role": "assistant", "content": res})
-        
