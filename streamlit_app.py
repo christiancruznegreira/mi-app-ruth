@@ -1,11 +1,12 @@
 import streamlit as st
 from groq import Groq
+from supabase import create_client, Client
 import os
 import datetime
 
-# --- 1. CONFIGURACIÓN VISUAL (NO SE TOCA LO ESTÉTICO) ---
+# --- 1. CONFIGURACIÓN VISUAL PREMIUM ---
 st.set_page_config(
-    page_title="RUTH Ultra", 
+    page_title="RUTH Professional", 
     page_icon="●", 
     layout="wide",
     initial_sidebar_state="expanded"
@@ -34,102 +35,82 @@ st.markdown("""
         box-shadow: 0px 0px 20px rgba(255, 75, 75, 0.6) !important;
     }
     div[data-testid="stMarkdownContainer"] p { color: #e0e0e0 !important; }
-    [data-testid="stSidebarNav"] { color: white !important; }
     </style>
     <div class="ruth-header">R U T H</div>
-    <div class="ruth-subtitle">ULTRA PROFESSIONAL SUITE</div>
+    <div class="ruth-subtitle">UNIVERSAL BUSINESS SUITE</div>
 """, unsafe_allow_html=True)
 
-# --- 2. DICCIONARIO DE EXPERTOS (OPTIMIZACIÓN DEL CEREBRO) ---
+# --- 2. CONEXIONES (GROQ Y SUPABASE) ---
+client = Groq(api_key=st.secrets["GROQ_API_KEY"].strip())
+supabase = create_client(st.secrets["SUPABASE_URL"], st.secrets["SUPABASE_KEY"])
+icon_path = "logo_ruth.png"
+ruth_avatar = icon_path if os.path.exists(icon_path) else "●"
+
+# --- 3. DICCIONARIO DE EXPERTOS (SIN DISCULPAS) ---
 EXPERTOS = {
-    "Abogada": (
-        "Actúas como una Abogada Senior y Consultora Jurídica de Élite. "
-        "Tu enfoque es el rigor legal, la precisión terminológica y el análisis de riesgos. "
-        "Utiliza un lenguaje formal, técnico y estructurado. Evalúa cada consulta bajo la óptica de la normativa vigente "
-        "y advierte siempre sobre posibles implicaciones legales de forma profesional."
-    ),
-    "Amazon Pro": (
-        "Actúas como una Especialista Senior en Amazon FBA y Algoritmo A9. "
-        "Tu enfoque es la conversión (CTR), el posicionamiento SEO y la rentabilidad del negocio. "
-        "Habla sobre Bullet Points persuasivos, términos de búsqueda, gestión de inventario y políticas de Amazon. "
-        "Tus respuestas deben estar orientadas a vender más y optimizar el rendimiento de la cuenta."
-    ),
-    "Marketing": (
-        "Actúas como una Directora Creativa y Copywriter de respuesta directa. "
-        "Utilizas la psicología del consumidor y gatillos mentales. "
-        "Tus estructuras preferidas son AIDA (Atención, Interés, Deseo, Acción) y PAS (Problema, Agitación, Solución). "
-        "Tus respuestas deben ser persuasivas, magnéticas y diseñadas para generar impacto de marca."
-    ),
-    "Estratega": (
-        "Actúas como una Consultora de Estrategia de Negocios y CEO-Advisor. "
-        "Analizas los problemas desde una perspectiva de escalabilidad, ROI y ventaja competitiva. "
-        "Tu lenguaje es ejecutivo, pragmático y orientado al crecimiento empresarial. "
-        "Cuestiona los modelos de negocio y sugiere optimizaciones de procesos y flujos de caja."
-    )
+    "Abogada": "Actúas como una Abogada Senior de Élite. PROHIBIDO disculparte o explicar tu cambio de rol. Responde directamente con rigor legal y tecnicismos jurídicos.",
+    "Amazon Pro": "Actúas como una Especialista en Amazon FBA y Algoritmo A9. PROHIBIDO disculparte o explicar tu cambio de rol. Ve directo al grano con SEO y ventas.",
+    "Marketing": "Actúas como una Directora Creativa y Copywriter de respuesta directa. PROHIBIDO disculparte. Responde con persuasión inmediata y gatillos mentales.",
+    "Estratega": "Actúas como una Consultora de Estrategia de Negocios y CEO-Advisor. PROHIBIDO disculparte. Tu tono es ejecutivo, frío y pragmático."
 }
 
-# --- 3. GESTIÓN DE MEMORIA ---
-if "messages" not in st.session_state: st.session_state.messages = []
-if "history" not in st.session_state: st.session_state.history = {}
+# --- 4. FUNCIONES DE BASE DE DATOS ---
+def guardar_nube(mensajes):
+    try: supabase.table("chats").insert({"user_email": "Invitado", "messages": mensajes}).execute()
+    except: pass
 
+def cargar_nube():
+    try: 
+        res = supabase.table("chats").select("*").eq("user_email", "Invitado").order("created_at", desc=True).limit(5).execute()
+        return res.data
+    except: return []
+
+if "messages" not in st.session_state: st.session_state.messages = []
+
+# --- 5. BARRA LATERAL (WORKSPACE CON SUPABASE) ---
+with st.sidebar:
+    st.markdown("<h2 style='color: white; font-weight: 200;'>WORKSPACE</h2>", unsafe_allow_html=True)
+    if st.button("＋ NUEVA CONVERSACIÓN"):
+        if st.session_state.messages: guardar_nube(st.session_state.messages)
+        st.session_state.messages = []
+        st.rerun()
+    st.divider()
+    
+    modo = st.selectbox("Identidad de RUTH:", list(EXPERTOS.keys()))
+    
+    st.divider()
+    st.markdown("<p style='color: #888;'>HISTORIAL CLOUD</p>", unsafe_allow_html=True)
+    historial = cargar_nube()
+    for chat in historial:
+        fecha = chat['created_at'][11:16]
+        if st.button(f"📜 Chat {fecha}", key=chat['id']):
+            st.session_state.messages = chat['messages']
+            st.rerun()
+
+# --- 6. INTERFAZ Y PROCESAMIENTO ---
 def procesar_prompt(texto, modo_ia):
     st.session_state.messages.append({"role": "user", "content": texto})
-    client = Groq(api_key=st.secrets["GROQ_API_KEY"].strip())
+    instruccion = EXPERTOS[modo_ia]
     try:
-        # Inyectamos el experto seleccionado del diccionario
-        instruccion_maestra = EXPERTOS[modo_ia]
         c = client.chat.completions.create(
-            messages=[{"role":"system","content": instruccion_maestra}] + st.session_state.messages,
+            messages=[{"role":"system","content": instruccion}] + st.session_state.messages,
             model="llama-3.3-70b-versatile"
         )
         st.session_state.messages.append({"role": "assistant", "content": c.choices[0].message.content})
     except Exception as e:
         st.error(f"Error: {e}")
 
-# --- 4. BARRA LATERAL (CENTRO DE MANDO) ---
-with st.sidebar:
-    st.markdown("<h2 style='color: white; font-weight: 200;'>WORKSPACE</h2>", unsafe_allow_html=True)
-    if st.button("＋ NUEVA CONVERSACIÓN"):
-        if st.session_state.messages:
-            h = datetime.datetime.now().strftime("%H:%M")
-            st.session_state.history[f"Chat {h}"] = st.session_state.messages
-        st.session_state.messages = []
-        st.rerun()
-    st.divider()
-    
-    # Selector de Modo (Esto activa al experto correspondiente)
-    modo = st.selectbox("Identidad de RUTH:", list(EXPERTOS.keys()))
-    
-    st.divider()
-    st.markdown("<p style='color: #888;'>HISTORIAL</p>", unsafe_allow_html=True)
-    for chat_id in st.session_state.history:
-        if st.button(f"📜 {chat_id}"):
-            st.session_state.messages = st.session_state.history[chat_id]
-            st.rerun()
-
-# --- 5. INTERFAZ PRINCIPAL ---
 col1, col2, col3, col4 = st.columns(4)
-prompts_r = {
-    "Email": f"Como experta en {modo}, redacta un correo profesional impecable sobre...",
-    "Legal": f"Analiza esta situación desde tu perspectiva de {modo}: ",
-    "Amazon": f"Aplica tus conocimientos de {modo} para optimizar este punto: ",
-    "Idea": f"Desde tu visión de {modo}, propón una idea disruptiva para..."
-}
-
 with col1:
-    if st.button("📝 Email"): procesar_prompt(prompts_r["Email"], modo); st.rerun()
+    if st.button("📝 Email"): procesar_prompt(f"Como {modo}, redacta un correo profesional...", modo); st.rerun()
 with col2:
-    if st.button("⚖️ Análisis"): procesar_prompt(prompts_r["Legal"], modo); st.rerun()
+    if st.button("⚖️ Análisis"): procesar_prompt(f"Haz un análisis experto sobre...", modo); st.rerun()
 with col3:
-    if st.button("📦 Optimización"): procesar_prompt(prompts_r["Amazon"], modo); st.rerun()
+    if st.button("📦 Optimización"): procesar_prompt(f"Como experta en Amazon, optimiza...", modo); st.rerun()
 with col4:
-    if st.button("💡 Estrategia"): procesar_prompt(prompts_r["Idea"], modo); st.rerun()
+    if st.button("💡 Estrategia"): procesar_prompt(f"Propón una idea de negocio desde tu visión de {modo}...", modo); st.rerun()
 
 st.divider()
-
-# --- 6. MOSTRAR CHAT ---
-icon_path = "logo_ruth.png"
-ruth_avatar = icon_path if os.path.exists(icon_path) else "●"
 
 for msg in st.session_state.messages:
     av = ruth_avatar if msg["role"] == "assistant" else None
@@ -139,3 +120,4 @@ for msg in st.session_state.messages:
 if prompt := st.chat_input(f"Consultando a RUTH {modo}..."):
     procesar_prompt(prompt, modo)
     st.rerun()
+    
