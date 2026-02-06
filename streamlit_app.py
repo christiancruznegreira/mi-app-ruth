@@ -4,75 +4,64 @@ import os
 import urllib.parse
 import random
 
-# 1. CONFIGURACIÓN PREMIUM
+# 1. CONFIGURACIÓN
 st.set_page_config(page_title="RUTH", page_icon="●", layout="centered")
 
-# CSS Avanzado para Estética Minimalista y Premium
+# CSS para MODO OSCURO PREMIUM CON PATRÓN
 st.markdown("""
     <style>
-    /* Ocultar elementos de Streamlit */
+    /* Fondo Oscuro con Patrón sutil */
+    [data-testid="stAppViewContainer"] {
+        background-color: #0e1117;
+        background-image: radial-gradient(#1a1d24 1px, transparent 1px);
+        background-size: 30px 30px; /* Este crea el patrón de puntos elegantes */
+    }
+    
+    /* Ocultar elementos innecesarios */
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
     header {visibility: hidden;}
     .viewerBadge_container__1QS1n {display: none;}
-    
-    /* Fondo y Tipografía General */
-    [data-testid="stAppViewContainer"] {
-        background-color: #ffffff;
-    }
-    
-    * {
-        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-    }
 
-    /* Estilo del Título Central */
+    /* Título RUTH elegante */
     .ruth-header {
         text-align: center;
-        padding-top: 3rem;
-        padding-bottom: 2rem;
-        letter-spacing: 0.5rem;
+        padding-top: 2rem;
+        letter-spacing: 0.8rem;
         font-weight: 200;
-        color: #1a1a1a;
-        font-size: 2.5rem;
+        color: #ffffff;
+        font-size: 3rem;
+        text-shadow: 0px 0px 15px rgba(255,255,255,0.1);
     }
 
-    /* Contenedor de mensajes */
+    /* Mensajes de Chat */
     .stChatMessage {
-        background-color: transparent !important;
-        border-bottom: 1px solid #f0f0f0 !important;
-        padding: 1.5rem 0.5rem !important;
-        border-radius: 0px !important;
+        background-color: rgba(255, 255, 255, 0.03) !important;
+        border-radius: 10px !important;
+        margin-bottom: 10px !important;
+        border: 1px solid rgba(255, 255, 255, 0.05) !important;
     }
 
-    /* Avatar personalizado */
-    [data-testid="stChatMessageAvatarAssistant"] {
-        background-color: #000 !important;
-        border: 1px solid #333;
-    }
-
-    /* Caja de entrada de texto */
-    .stChatInputContainer {
-        border-top: none !important;
-        padding-bottom: 3rem !important;
+    /* Input de texto */
+    .stChatInput {
+        background-color: #1a1d24 !important;
+        border: 1px solid #333 !important;
+        border-radius: 15px !important;
     }
     
-    .stChatInput {
-        border-radius: 50px !important;
-        border: 1px solid #e0e0e0 !important;
-        background-color: #fafafa !important;
+    /* Forzar texto blanco */
+    div[data-testid="stMarkdownContainer"] p {
+        color: #e0e0e0 !important;
     }
     </style>
     
     <div class="ruth-header">R U T H</div>
-    <p style='text-align: center; color: #888; letter-spacing: 0.2rem; font-size: 0.7rem; margin-top: -1.5rem; margin-bottom: 2rem;'>
-        INTELLIGENT ASSISTANCE
-    </p>
 """, unsafe_allow_html=True)
 
-# 2. LÓGICA DE BACKEND (GROQ)
+# 2. LOGICA
 with st.sidebar:
-    st.markdown("### Configuración")
-    if st.button("Limpiar Memoria"):
+    st.markdown("### Control")
+    if st.button("Reiniciar Chat"):
         st.session_state.messages = []
         st.rerun()
 
@@ -80,22 +69,22 @@ icon_path = "logo_ruth.png"
 ruth_avatar = icon_path if os.path.exists(icon_path) else "●"
 
 if "GROQ_API_KEY" not in st.secrets:
-    st.error("Falta la llave API.")
+    st.error("Error: Llave no configurada.")
     st.stop()
 
 client = Groq(api_key=st.secrets["GROQ_API_KEY"].strip())
 
 if "messages" not in st.session_state or len(st.session_state.messages) == 0:
     st.session_state.messages = [
-        {"role": "system", "content": "Eres RUTH. Tu tono es sofisticado, minimalista y extremadamente útil."}
+        {"role": "system", "content": "Eres RUTH. Tu tono es sofisticado y minimalista. Si piden imagen, usa: GENERANDO_IMAGEN: description."}
     ]
 
-# Función para imágenes
 def get_image_url(prompt_text):
     prompt_encoded = urllib.parse.quote(prompt_text)
-    return f"https://image.pollinations.ai/prompt/{prompt_encoded}?width=1024&height=1024&nologo=true"
+    seed = random.randint(1, 9999)
+    return f"https://image.pollinations.ai/prompt/{prompt_encoded}?width=1024&height=1024&seed={seed}&nologo=true"
 
-# 3. CHAT
+# 3. INTERFAZ DE CHAT
 for message in st.session_state.messages:
     if message["role"] != "system":
         av = ruth_avatar if message["role"] == "assistant" else None
@@ -106,7 +95,7 @@ for message in st.session_state.messages:
             else:
                 st.markdown(message["content"])
 
-if prompt := st.chat_input("Escribe tu consulta..."):
+if prompt := st.chat_input("¿Qué necesitas de RUTH?"):
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
         st.markdown(prompt)
@@ -121,10 +110,4 @@ if prompt := st.chat_input("Escribe tu consulta..."):
             
             if "GENERANDO_IMAGEN:" in response:
                 prompt_img = response.replace("GENERANDO_IMAGEN:", "").strip()
-                st.image(get_image_url(prompt_img), use_container_width=True)
-            else:
-                st.markdown(response)
-                
-            st.session_state.messages.append({"role": "assistant", "content": response})
-        except Exception as e:
-            st.error(f"Error: {e}")
+                st.image(get_image_url(prompt_img), use_container_width
