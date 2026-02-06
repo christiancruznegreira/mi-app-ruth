@@ -5,17 +5,12 @@ from fpdf import FPDF
 import os
 import datetime
 
-# --- 1. CONFIGURACIÓN Y ESTÉTICA PREMIUM MINIMALISTA ---
-st.set_page_config(
-    page_title="RUTH Professional", 
-    page_icon="●", 
-    layout="wide", 
-    initial_sidebar_state="expanded"
-)
+# --- 1. ESTÉTICA PREMIUM Y REJILLA PERFECTA ---
+st.set_page_config(page_title="RUTH Pro", page_icon="●", layout="wide", initial_sidebar_state="expanded")
 
 st.markdown("""
     <style>
-    /* Fondo con Patrón Unificado */
+    /* Fondo Unificado */
     [data-testid="stAppViewContainer"], [data-testid="stSidebar"], .stSidebarContent {
         background-color: #0e1117 !important;
         background-image: radial-gradient(#1a1d24 1px, transparent 1px) !important;
@@ -23,64 +18,49 @@ st.markdown("""
     }
     header, footer, .viewerBadge_container__1QS1n { visibility: hidden; }
 
-    /* EFECTO NEÓN ROJO ROTO (Título Gigante) */
+    /* Neón Rojo Roto */
     @keyframes flicker {
         0%, 18%, 22%, 25%, 53%, 57%, 100% {
-            text-shadow: 0 0 4px #f00, 0 0 11px #f00, 0 0 19px #f00, 0 0 40px #f00, 0 0 80px #f00;
+            text-shadow: 0 0 4px #f00, 0 0 11px #f00, 0 0 19px #f00, 0 0 40px #f00;
             color: #ff4b4b;
         }
         20%, 24%, 55% { text-shadow: none; color: #330000; }
     }
-    .ruth-header { 
-        text-align: center; padding-top: 1rem; color: #ff4b4b; font-size: 5.5rem; 
-        animation: flicker 3s infinite alternate; font-weight: 100; letter-spacing: 1.5rem; 
-        margin-bottom: 0px;
-    }
-    .ruth-subtitle { 
-        text-align: center; color: #888; font-size: 0.8rem; letter-spacing: 0.3rem; 
-        margin-top: -15px; margin-bottom: 3rem; font-weight: bold;
-    }
+    .ruth-header { text-align: center; padding-top: 1rem; color: #ff4b4b; font-size: 5rem; animation: flicker 3s infinite alternate; font-weight: 100; letter-spacing: 1.2rem; }
+    .ruth-subtitle { text-align: center; color: #888; font-size: 0.8rem; letter-spacing: 0.3rem; margin-top: -10px; margin-bottom: 2rem; font-weight: bold;}
 
-    /* BOTONES MINIMALISTAS AJUSTADOS */
+    /* MARGENES DE BOTONES PERFECTOS */
+    [data-testid="column"] { padding: 0px 4px !important; } /* Espacio igual entre botones */
+
     .stButton>button {
         border-radius: 8px !important;
         border: 1px solid #ff4b4b !important;
         background-color: rgba(255, 75, 75, 0.05) !important;
         color: white !important;
-        width: 100%;
-        height: 45px !important;
+        width: 100% !important;
+        height: 42px !important;
         transition: 0.3s;
         text-transform: uppercase;
-        letter-spacing: 0.05rem;
-        font-size: 0.65rem !important;
-        font-weight: 300 !important;
-        padding: 0px 5px !important;
+        font-size: 0.55rem !important;
+        letter-spacing: 0.02rem;
         display: flex;
         align-items: center;
         justify-content: center;
         white-space: nowrap;
-        overflow: hidden;
     }
-    .stButton>button:hover {
-        background-color: #ff4b4b !important;
-        box-shadow: 0px 0px 20px rgba(255, 75, 75, 0.6) !important;
-    }
-
+    .stButton>button:hover { background-color: #ff4b4b !important; box-shadow: 0px 0px 20px rgba(255, 75, 75, 0.6) !important; }
     div[data-testid="stMarkdownContainer"] p { color: #e0e0e0 !important; }
     </style>
-    
     <div class="ruth-header">R U T H</div>
     <div class="ruth-subtitle">UNIVERSAL BUSINESS SUITE</div>
 """, unsafe_allow_html=True)
 
-# --- 2. LÓGICA DE EXPORTACIÓN PDF ---
+# --- 2. LOGICA DE PDF ---
 def generar_pdf_bytes(mensajes, modo):
     pdf = FPDF()
     pdf.add_page()
     pdf.set_font("Helvetica", "B", 16)
     pdf.cell(0, 10, "REPORTE PROFESIONAL - RUTH", ln=True, align="C")
-    pdf.set_font("Helvetica", "I", 10)
-    pdf.cell(0, 10, f"Generado: {datetime.datetime.now().strftime('%d/%m/%Y')} | Modo: {modo}", ln=True, align="C")
     pdf.ln(10)
     for msg in mensajes:
         rol = "USUARIO" if msg["role"] == "user" else "RUTH"
@@ -92,31 +72,42 @@ def generar_pdf_bytes(mensajes, modo):
         pdf.ln(4)
     return bytes(pdf.output())
 
-# --- 3. CONEXIONES (GROQ Y SUPABASE) ---
+# --- 3. CONEXIONES ---
 client = Groq(api_key=st.secrets["GROQ_API_KEY"].strip())
 supabase = create_client(st.secrets["SUPABASE_URL"], st.secrets["SUPABASE_KEY"])
 icon_path = "logo_ruth.png"
 ruth_avatar = icon_path if os.path.exists(icon_path) else "●"
 
 PERSONALIDADES = {
-    "Abogada": "Eres RUTH Legal Advisor. Formal y técnica.",
-    "Amazon Pro": "Eres RUTH Amazon Strategist. SEO y ventas.",
-    "Marketing": "Eres RUTH Copywriter. Creativa y persuasiva.",
-    "Estratega": "Eres RUTH CEO Advisor. Estrategia y escalabilidad.",
-    "Médico": "Eres RUTH Medical Specialist. Empática y científica.",
-    "Anime": "Eres RUTH Otaku Sensei. Experta en anime."
+    "Abogada": "Actúas ÚNICAMENTE como RUTH Legal Advisor. Tono formal y técnico.",
+    "Amazon Pro": "Actúas ÚNICAMENTE como RUTH Amazon Strategist. Enfócate en SEO y ventas.",
+    "Marketing": "Actúas ÚNICAMENTE como RUTH Copywriter. Persuasiva.",
+    "Estratega": "Actúas ÚNICAMENTE como RUTH CEO Advisor. Visión ejecutiva.",
+    "Médico": "Actúas ÚNICAMENTE como RUTH Médico. Tono científico.",
+    "Estudiante": "Actúas ÚNICAMENTE como RUTH Tutor Académico. Didáctica.",
+    "Anime": "Actúas ÚNICAMENTE como RUTH Otaku Sensei. Cultura japonesa."
 }
+
+# --- 4. FUNCIONES DE GUARDADO ---
+def guardar_nube(mensajes):
+    if mensajes:
+        try: supabase.table("chats").insert({"user_email": "Invitado", "messages": mensajes}).execute()
+        except: pass
 
 if "messages" not in st.session_state: st.session_state.messages = []
 
-# --- 4. BARRA LATERAL (WORKSPACE) ---
+# --- 5. BARRA LATERAL (CON PDF Y GUARDADO) ---
 with st.sidebar:
     st.markdown("<h2 style='color: white; font-weight: 200;'>WORKSPACE</h2>", unsafe_allow_html=True)
+    
+    # EL BOTÓN DE NUEVA CONVERSACIÓN AHORA GUARDA PRIMERO
     if st.button("＋ NUEVA CONVERSACIÓN"):
+        if st.session_state.messages:
+            guardar_nube(st.session_state.messages)
         st.session_state.messages = []
         st.rerun()
     
-    # Exportación PDF
+    # BOTÓN DE PDF RECUPERADO
     if st.session_state.messages:
         st.divider()
         try:
@@ -128,38 +119,37 @@ with st.sidebar:
     modo = st.selectbox("Especialidad Activa:", list(PERSONALIDADES.keys()))
     
     st.divider()
-    st.markdown("<p style='color: #888; font-size: 0.7rem;'>HISTORIAL CLOUD</p>", unsafe_allow_html=True)
+    st.markdown("<p style='color: #888;'>HISTORIAL CLOUD</p>", unsafe_allow_html=True)
     try:
         res = supabase.table("chats").select("*").eq("user_email", "Invitado").order("created_at", desc=True).limit(5).execute()
         for chat in res.data:
-            if st.button(f"📜 {chat['created_at'][11:16]}", key=chat['id']):
+            if st.button(f"📜 Chat {chat['created_at'][11:16]}", key=chat['id']):
                 st.session_state.messages = chat['messages']
                 st.rerun()
     except: pass
 
-# --- 5. CUERPO PRINCIPAL (BOTONES RÁPIDOS) ---
+# --- 6. CUERPO (7 BOTONES PERFECTOS) ---
 def enviar_c(t):
     st.session_state.messages.append({"role": "user", "content": t})
     c = client.chat.completions.create(messages=[{"role":"system","content": PERSONALIDADES[modo]}] + st.session_state.messages, model="llama-3.3-70b-versatile")
     st.session_state.messages.append({"role": "assistant", "content": c.choices[0].message.content})
 
-cols = st.columns(6)
-labels = ["REDACCIÓN", "LEGAL", "AMAZON", "ESTRATEGIA", "SALUD", "ANIME"]
-prompts = ["Redacta un correo profesional.", "Análisis experto.", "SEO Amazon.", "Idea disruptiva.", "Consulta médica.", "Recomendación anime."]
+cols = st.columns(7)
+labels = ["REDACCIÓN", "LEGAL", "AMAZON", "ESTRATEGIA", "SALUD", "ESTUDIOS", "ANIME"]
+prompts = ["Redacta un correo.", "Análisis legal.", "SEO Amazon.", "Estrategia.", "Tema salud.", "Ayúdame a estudiar.", "Recomienda anime."]
 
-for i in range(6):
+for i in range(7):
     with cols[i]:
         if st.button(labels[i]): enviar_c(prompts[i]); st.rerun()
 
 st.divider()
 
-# --- 6. CHAT ---
 for msg in st.session_state.messages:
     av = ruth_avatar if msg["role"] == "assistant" else None
     with st.chat_message(msg["role"], avatar=av):
         st.markdown(msg["content"])
 
-if prompt := st.chat_input(f"Hablando con RUTH {modo}..."):
+if prompt := st.chat_input(f"Consultando a RUTH {modo}..."):
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"): st.markdown(prompt)
     with st.chat_message("assistant", avatar=ruth_avatar):
