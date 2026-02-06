@@ -2,7 +2,7 @@ import streamlit as st
 from groq import Groq
 import os
 
-# --- 1. ESTÉTICA PREMIUM RUTH (ROJO Y NEGRO) ---
+# 1. ESTÉTICA PREMIUM RUTH
 st.set_page_config(page_title="RUTH Business Suite", page_icon="●", layout="wide")
 
 st.markdown("""
@@ -27,7 +27,7 @@ st.markdown("""
     <div class="ruth-subtitle">UNIVERSAL BUSINESS SUITE</div>
 """, unsafe_allow_html=True)
 
-# --- 2. SELECTOR DE UNIDAD DE NEGOCIO ---
+# 2. PANEL LATERAL
 with st.sidebar:
     st.markdown("<h2 style='color: #ff4b4b;'>CENTRO DE MANDO</h2>", unsafe_allow_html=True)
     negocio = st.selectbox(
@@ -40,84 +40,50 @@ with st.sidebar:
             "Estrategia de Negocios (Socia)"
         ]
     )
-    
     st.divider()
     if st.button("🔄 REINICIAR CONSOLA"):
         st.session_state.messages = []
         st.rerun()
-    
-    st.info("💡 Estrategia Pro: Pega noticias de 2026 y RUTH las analizará con su lógica avanzada.")
 
-# --- 3. CONFIGURACIÓN DEL CEREBRO ---
+# 3. DEFINICIÓN DE PERSONALIDADES ÉLITE
+personalidades = {
+    "Amazon FBA Pro (Ventas)": "Eres RUTH Amazon Experta. Tu tono es analítico y audaz. Te enfocas en SEO y ventas.",
+    "Legal & Contratos (Asistente)": "Eres RUTH Legal. Tu tono es preciso, formal y técnico. Te enfocas en la exactitud jurídica.",
+    "Copywriting & Ads (Marketing)": "Eres RUTH Copywriter. Tu tono es persuasivo y creativo. Te enfocas en la psicología de ventas.",
+    "Educación & Tutoría (Académico)": "Eres RUTH Tutora. Tu tono es sabio, paciente y alentador. Te enfocas en simplificar lo complejo.",
+    "Estrategia de Negocios (Socia)": "Eres RUTH Estratega. Tu tono es visionario y ejecutivo. Te enfocas en la escalabilidad y rentabilidad."
+}
+
+# 4. CEREBRO DE RUTH
 client = Groq(api_key=st.secrets["GROQ_API_KEY"].strip())
 icon_path = "logo_ruth.png"
 ruth_avatar = icon_path if os.path.exists(icon_path) else "●"
 
-# Definición de las personalidades de RUTH
-personalidades = {
-   # --- DEFINICIÓN DE PERSONALIDADES ÉLITE ---
-personalidades = {
-    "Amazon FBA Pro (Ventas)": (
-        "Eres RUTH, tu socia estratégica en E-commerce. Tu tono es analítico, orientado a resultados y audaz. "
-        "Hablas con autoridad sobre SEO de Amazon y conversiones. Tu objetivo es hacer que el usuario gane dinero. "
-        "Sé directa y propón siempre una mejora que el usuario no haya visto."
-    ),
-    "Legal & Contratos (Asistente)": (
-        "Eres RUTH, tu asistente legal de alto nivel. Tu tono es extremadamente preciso, formal y cauteloso. "
-        "Utilizas un lenguaje jurídico impecable. Tu prioridad es la exactitud técnica y la detección de riesgos en los textos. "
-        "Eres fría pero impecablemente eficiente."
-    ),
-    "Copywriting & Ads (Marketing)": (
-        "Eres RUTH, tu mente maestra creativa. Tu tono es persuasivo, magnético y psicológico. "
-        "Entiendes los deseos profundos de la audiencia. No solo escribes textos, vendes emociones. "
-        "Eres vibrante y siempre sugieres un ángulo 'disruptivo' para los anuncios."
-    ),
-    "Educación & Tutoría (Académico)": (
-        "Eres RUTH, tu mentora intelectual. Tu tono es paciente, sabio y alentador. "
-        "Tienes la capacidad de desglosar lo complejo en partes simples sin perder la sofisticación. "
-        "Desafías al usuario a pensar más profundamente en cada respuesta."
-    ),
-    "Estrategia de Negocios (Socia)": (
-        "Eres RUTH, la estratega jefe. Tu tono es visionario, ejecutivo y pragmático. "
-        "Analizas negocios como una partida de ajedrez. Te enfocas en la escalabilidad, el flujo de caja y la ventaja competitiva. "
-        "Tus consejos son de nivel CEO."
-    )
-}
-}
-
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# Mostrar Chat
 for msg in st.session_state.messages:
     av = ruth_avatar if msg["role"] == "assistant" else None
     with st.chat_message(msg["role"], avatar=av):
         st.markdown(msg["content"])
 
-# --- 4. INTERACCIÓN ---
-if prompt := st.chat_input(f"Trabajando en modo: {negocio}..."):
+if prompt := st.chat_input(f"Modo: {negocio}..."):
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
         st.markdown(prompt)
 
     with st.chat_message("assistant", avatar=ruth_avatar):
         try:
-            # Instrucción Maestra según el negocio seleccionado
-            system_prompt = (
-                f"{personalidades[negocio]} "
-                "Tu conocimiento base llega a 2023, pero eres capaz de procesar cualquier información de 2026 que el usuario te proporcione en el chat. "
-                "Responde siempre con un tono profesional, elegante y minimalista."
-            )
+            # Aquí inyectamos la personalidad según el modo elegido
+            sys_prompt = f"{personalidades[negocio]} Responde con elegancia y mantén tu identidad como RUTH."
+            mensajes_ia = [{"role": "system", "content": sys_prompt}] + st.session_state.messages
             
-            mensajes_ia = [{"role": "system", "content": system_prompt}] + st.session_state.messages
-
             completion = client.chat.completions.create(
                 messages=mensajes_ia,
-                model="llama-3.3-70b-versatile",
+                model="llama-3.3-70b-versatile"
             )
-            
             respuesta = completion.choices[0].message.content
             st.markdown(respuesta)
             st.session_state.messages.append({"role": "assistant", "content": respuesta})
         except Exception as e:
-            st.error(f"Error de sistema: {e}")
+            st.error(f"Error: {e}")
