@@ -4,7 +4,7 @@ from supabase import create_client, Client
 import os
 import datetime
 
-# --- 1. CONFIGURACIÓN VISUAL PREMIUM ---
+# --- 1. ESTÉTICA PREMIUM RUTH ---
 st.set_page_config(page_title="RUTH Pro", page_icon="●", layout="wide", initial_sidebar_state="expanded")
 
 st.markdown("""
@@ -14,7 +14,7 @@ st.markdown("""
         background-image: radial-gradient(#1a1d24 1px, transparent 1px) !important;
         background-size: 30px 30px !important;
     }
-    header, footer { visibility: hidden; }
+    header, footer, .viewerBadge_container__1QS1n { visibility: hidden; }
     @keyframes flicker {
         0%, 18%, 22%, 25%, 53%, 57%, 100% {
             text-shadow: 0 0 4px #f00, 0 0 11px #f00, 0 0 19px #f00, 0 0 40px #f00, 0 0 80px #f00;
@@ -32,12 +32,13 @@ st.markdown("""
     <div class="ruth-subtitle">UNIVERSAL BUSINESS SUITE</div>
 """, unsafe_allow_html=True)
 
-# --- 2. PERSONALIDADES ---
+# --- 2. PERSONALIDADES (Añadido Médico) ---
 PERSONALIDADES = {
     "Abogada": "Eres RUTH Legal Advisor. Tono formal, frío y técnico. Sin disculpas.",
     "Amazon Pro": "Eres RUTH Amazon Strategist. SEO, ventas y rentabilidad. Directa.",
     "Marketing": "Eres RUTH Copywriter. Tono magnético, persuasivo y creativo.",
-    "Estratega": "Eres RUTH CEO Advisor. Escalabilidad y visión ejecutiva."
+    "Estratega": "Eres RUTH CEO Advisor. Escalabilidad y visión ejecutiva.",
+    "Médico": "Eres RUTH Medical Specialist. Tu tono es empático, riguroso y científico. Basas tus respuestas en evidencia médica. Aclara siempre que eres una IA de soporte y no sustituyes al médico real."
 }
 
 # --- 3. CONEXIONES ---
@@ -48,20 +49,16 @@ supabase = create_client(st.secrets["SUPABASE_URL"], st.secrets["SUPABASE_KEY"])
 
 def guardar_nube(mensajes):
     if mensajes:
-        try:
-            supabase.table("chats").insert({"user_email": "Invitado", "messages": mensajes}).execute()
-        except Exception:
-            pass
+        try: supabase.table("chats").insert({"user_email": "Invitado", "messages": mensajes}).execute()
+        except Exception: pass
 
 def cargar_nube():
     try:
         res = supabase.table("chats").select("*").eq("user_email", "Invitado").order("created_at", desc=True).limit(5).execute()
         return res.data
-    except Exception:
-        return []
+    except Exception: return []
 
-if "messages" not in st.session_state:
-    st.session_state.messages = []
+if "messages" not in st.session_state: st.session_state.messages = []
 
 # --- 4. SIDEBAR ---
 with st.sidebar:
@@ -80,16 +77,14 @@ with st.sidebar:
             st.session_state.messages = chat['messages']
             st.rerun()
 
-# --- 5. CUERPO PRINCIPAL ---
+# --- 5. CUERPO PRINCIPAL (BOTONES ACTUALIZADOS) ---
 def enviar_c(t):
     st.session_state.messages.append({"role": "user", "content": t})
-    c = client.chat.completions.create(
-        messages=[{"role":"system","content": PERSONALIDADES[modo]}] + st.session_state.messages,
-        model="llama-3.3-70b-versatile"
-    )
+    c = client.chat.completions.create(messages=[{"role":"system","content": PERSONALIDADES[modo]}] + st.session_state.messages, model="llama-3.3-70b-versatile")
     st.session_state.messages.append({"role": "assistant", "content": c.choices[0].message.content})
 
-col1, col2, col3, col4 = st.columns(4)
+# Botones adaptados según el modo médico
+col1, col2, col3, col4, col5 = st.columns(5) # Añadimos una columna más
 with col1: 
     if st.button("📝 Email"): enviar_c("Redacta un correo profesional."); st.rerun()
 with col2: 
@@ -98,9 +93,12 @@ with col3:
     if st.button("📦 Amazon"): enviar_c("Optimiza SEO Amazon."); st.rerun()
 with col4: 
     if st.button("💡 Estrategia"): enviar_c("Propón una idea disruptiva."); st.rerun()
+with col5: 
+    if st.button("🩺 Salud"): enviar_c("Realiza un resumen clínico o explica un término médico de forma profesional."); st.rerun()
 
 st.divider()
 
+# Mostrar Chat
 for msg in st.session_state.messages:
     av = ruth_avatar if msg["role"] == "assistant" else None
     with st.chat_message(msg["role"], avatar=av):
@@ -110,10 +108,7 @@ if prompt := st.chat_input(f"Consultando a RUTH {modo}..."):
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"): st.markdown(prompt)
     with st.chat_message("assistant", avatar=ruth_avatar):
-        c = client.chat.completions.create(
-            messages=[{"role":"system","content": PERSONALIDADES[modo]}] + st.session_state.messages,
-            model="llama-3.3-70b-versatile"
-        )
+        c = client.chat.completions.create(messages=[{"role":"system","content": PERSONALIDADES[modo]}] + st.session_state.messages, model="llama-3.3-70b-versatile")
         res = c.choices[0].message.content
         st.markdown(res)
         st.session_state.messages.append({"role": "assistant", "content": res})
