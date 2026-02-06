@@ -1,87 +1,125 @@
 import streamlit as st
 from groq import Groq
 import os
+import datetime
 
-# 1. ESTÉTICA PREMIUM RUTH
-st.set_page_config(page_title="RUTH Business Suite", page_icon="●", layout="wide")
+# 1. CONFIGURACIÓN Y ESTÉTICA UNIFICADA
+st.set_page_config(page_title="RUTH Professional", page_icon="●", layout="wide")
 
 st.markdown("""
     <style>
-    [data-testid="stAppViewContainer"] {
-        background-color: #0e1117;
-        background-image: radial-gradient(#1a1d24 1px, transparent 1px);
-        background-size: 30px 30px;
+    /* Fondo y Patrón para toda la App (Principal y Sidebar) */
+    [data-testid="stAppViewContainer"], [data-testid="stSidebar"] {
+        background-color: #0e1117 !important;
+        background-image: radial-gradient(#1a1d24 1px, transparent 1px) !important;
+        background-size: 30px 30px !important;
     }
-    #MainMenu, footer, header, .viewerBadge_container__1QS1n {visibility: hidden; display: none;}
+
+    /* Quitar bordes y líneas de Streamlit */
+    [data-testid="stSidebar"] { border-right: 1px solid rgba(255, 255, 255, 0.05); }
+    header { visibility: hidden; }
+    footer { visibility: hidden; }
+
+    /* Título RUTH */
     .ruth-header {
         text-align: center; padding-top: 1rem; letter-spacing: 0.8rem; 
-        font-weight: 200; color: #ff4b4b; font-size: 3.5rem; margin-bottom: 0px;
+        font-weight: 200; color: #ff4b4b; font-size: 3rem; margin-bottom: 0px;
     }
     .ruth-subtitle {
         text-align: center; color: #888; font-size: 0.8rem; 
-        margin-top: -10px; letter-spacing: 0.3rem; margin-bottom: 2rem;
+        margin-top: -10px; letter-spacing: 0.2rem; margin-bottom: 2rem;
     }
-    div[data-testid="stMarkdownContainer"] p { color: #e0e0e0 !important; font-size: 1.05rem; }
+
+    /* Botones Premium en el Sidebar */
+    .stButton>button {
+        width: 100%;
+        background-color: rgba(255, 75, 75, 0.1) !important;
+        color: #ff4b4b !important;
+        border: 1px solid #ff4b4b !important;
+        border-radius: 10px !important;
+        transition: 0.3s;
+    }
+    .stButton>button:hover {
+        background-color: #ff4b4b !important;
+        color: white !important;
+    }
+
+    /* Estilo del chat */
+    div[data-testid="stMarkdownContainer"] p { color: #e0e0e0 !important; }
     </style>
+    
     <div class="ruth-header">R U T H</div>
     <div class="ruth-subtitle">UNIVERSAL BUSINESS SUITE</div>
 """, unsafe_allow_html=True)
 
-# 2. PANEL LATERAL
+# 2. INICIALIZACIÓN DE MEMORIA
+if "messages" not in st.session_state:
+    st.session_state.messages = []
+if "chat_history" not in st.session_state:
+    st.session_state.chat_history = {} # Aquí guardaremos los chats pasados
+
+# 3. PANEL LATERAL DESPLEGABLE (SIDEBAR)
 with st.sidebar:
-    st.markdown("<h2 style='color: #ff4b4b;'>CENTRO DE MANDO</h2>", unsafe_allow_html=True)
-    negocio = st.selectbox(
-        "Activar Módulo:",
-        [
-            "Amazon FBA Pro (Ventas)",
-            "Legal & Contratos (Asistente)",
-            "Copywriting & Ads (Marketing)",
-            "Educación & Tutoría (Académico)",
-            "Estrategia de Negocios (Socia)"
-        ]
-    )
-    st.divider()
-    if st.button("🔄 REINICIAR CONSOLA"):
+    st.markdown("<h3 style='color: white; font-weight: 200;'>WORKSPACE</h3>", unsafe_allow_html=True)
+    
+    # Botón: Nueva Conversación
+    if st.button("＋ NUEVA CONVERSACIÓN"):
+        # Guardar la actual antes de borrar si tiene mensajes
+        if st.session_state.messages:
+            id_chat = datetime.datetime.now().strftime("%d/%m %H:%M")
+            st.session_state.chat_history[id_chat] = st.session_state.messages
         st.session_state.messages = []
         st.rerun()
 
-# 3. DEFINICIÓN DE PERSONALIDADES ÉLITE
-personalidades = {
-    "Amazon FBA Pro (Ventas)": "Eres RUTH Amazon Experta. Tu tono es analítico y audaz. Te enfocas en SEO y ventas.",
-    "Legal & Contratos (Asistente)": "Eres RUTH Legal. Tu tono es preciso, formal y técnico. Te enfocas en la exactitud jurídica.",
-    "Copywriting & Ads (Marketing)": "Eres RUTH Copywriter. Tu tono es persuasivo y creativo. Te enfocas en la psicología de ventas.",
-    "Educación & Tutoría (Académico)": "Eres RUTH Tutora. Tu tono es sabio, paciente y alentador. Te enfocas en simplificar lo complejo.",
-    "Estrategia de Negocios (Socia)": "Eres RUTH Estratega. Tu tono es visionario y ejecutivo. Te enfocas en la escalabilidad y rentabilidad."
-}
+    st.markdown("---")
+    st.markdown("<p style='color: #888; font-size: 0.8rem;'>CONVERSACIONES GUARDADAS</p>", unsafe_allow_html=True)
+    
+    # Listado de conversaciones guardadas
+    if not st.session_state.chat_history:
+        st.caption("No hay chats guardados aún.")
+    else:
+        for fecha in sorted(st.session_state.chat_history.keys(), reverse=True):
+            if st.button(f"💬 {fecha}"):
+                st.session_state.messages = st.session_state.chat_history[fecha]
+                st.rerun()
 
-# 4. CEREBRO DE RUTH
+    st.divider()
+    negocio = st.selectbox(
+        "Módulo Activo:",
+        ["Amazon FBA", "Legal", "Marketing", "Académico", "Estrategia"]
+    )
+
+# 4. LÓGICA DE IA (GROQ)
 client = Groq(api_key=st.secrets["GROQ_API_KEY"].strip())
 icon_path = "logo_ruth.png"
 ruth_avatar = icon_path if os.path.exists(icon_path) else "●"
 
-if "messages" not in st.session_state:
-    st.session_state.messages = []
+# Personalidades
+personalidades = {
+    "Amazon FBA": "Eres RUTH Amazon Experta.",
+    "Legal": "Eres RUTH Legal Assistant.",
+    "Marketing": "Eres RUTH Copywriter Pro.",
+    "Académico": "Eres RUTH Tutora Académica.",
+    "Estrategia": "Eres RUTH Business Strategist."
+}
 
+# Mostrar Chat
 for msg in st.session_state.messages:
     av = ruth_avatar if msg["role"] == "assistant" else None
     with st.chat_message(msg["role"], avatar=av):
         st.markdown(msg["content"])
 
-if prompt := st.chat_input(f"Modo: {negocio}..."):
+# Entrada de Usuario
+if prompt := st.chat_input("Escribe tu consulta..."):
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
         st.markdown(prompt)
 
     with st.chat_message("assistant", avatar=ruth_avatar):
         try:
-            # Aquí inyectamos la personalidad según el modo elegido
-            sys_prompt = f"{personalidades[negocio]} Responde con elegancia y mantén tu identidad como RUTH."
+            sys_prompt = f"{personalidades[negocio]} Responde profesionalmente como RUTH."
             mensajes_ia = [{"role": "system", "content": sys_prompt}] + st.session_state.messages
-            
-            completion = client.chat.completions.create(
-                messages=mensajes_ia,
-                model="llama-3.3-70b-versatile"
-            )
+            completion = client.chat.completions.create(messages=mensajes_ia, model="llama-3.3-70b-versatile")
             respuesta = completion.choices[0].message.content
             st.markdown(respuesta)
             st.session_state.messages.append({"role": "assistant", "content": respuesta})
