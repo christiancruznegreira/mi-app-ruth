@@ -3,102 +3,74 @@ from groq import Groq
 from duckduckgo_search import DDGS
 import os
 
-# --- 1. BRANDING Y ESTÉTICA (CARGA TOTALMENTE INDEPENDIENTE) ---
-st.set_page_config(page_title="RUTH Professional", page_icon="●", layout="centered")
+# --- 1. BRANDING (SE CARGA SÍ O SÍ) ---
+st.set_page_config(page_title="RUTH Professional", page_icon="●")
 
-st.markdown("""
-    <style>
-    [data-testid="stAppViewContainer"] {
-        background-color: #0e1117;
-        background-image: radial-gradient(#1a1d24 1px, transparent 1px);
-        background-size: 30px 30px;
-    }
-    footer {visibility: hidden;}
-    .viewerBadge_container__1QS1n {display: none;}
-    .ruth-header {
-        text-align: center; padding-top: 1rem; letter-spacing: 0.8rem; 
-        font-weight: 200; color: #ff4b4b; font-size: 3.5rem; margin-bottom: 0px;
-    }
-    .ruth-subtitle {
-        text-align: center; color: #888; font-size: 0.9rem; 
-        letter-spacing: 0.2rem; margin-top: -10px; margin-bottom: 2rem;
-    }
-    div[data-testid="stMarkdownContainer"] p {color: #e0e0e0 !important;}
-    </style>
-    <div class="ruth-header">R U T H</div>
-    <div class="ruth-subtitle">INTELIGENCIA ARTIFICIAL PARA PROFESIONALES</div>
-""", unsafe_allow_html=True)
+# Título y Subtítulo directos
+st.markdown("<h1 style='text-align: center; color: #ff4b4b; letter-spacing: 0.5rem;'>R U T H</h1>", unsafe_allow_html=True)
+st.markdown("<p style='text-align: center; color: #888; letter-spacing: 0.1rem; font-weight: bold;'>INTELIGENCIA ARTIFICIAL PARA PROFESIONALES</p>", unsafe_allow_html=True)
+st.divider()
 
-# --- 2. BARRA LATERAL (SIEMPRE VISIBLE) ---
+# --- 2. BARRA LATERAL (BOTÓN DE REINICIO) ---
 with st.sidebar:
-    st.markdown("### PANEL DE CONTROL")
-    if st.button("🔄 NUEVA CONVERSACIÓN"):
+    st.header("SISTEMA")
+    if st.button("REINICIAR TODO"):
         st.session_state.messages = []
         st.rerun()
-    st.divider()
-    st.caption("Conexión: Red Global RUTH (Activa)")
+    st.write("---")
+    st.write("Fecha: 6 de Febrero, 2026")
 
-# --- 3. FUNCIÓN DE BÚSQUEDA ---
-def buscar_web(query):
+# --- 3. LÓGICA DE BÚSQUEDA ---
+def obtener_datos_web(query):
     try:
         with DDGS() as ddgs:
-            resultados = [r for r in ddgs.text(query, max_results=4)]
-            if resultados:
-                return "\n\n".join([f"NOTICIA: {r['body']}" for r in resultados])
+            # Simplificamos la búsqueda al máximo
+            results = ddgs.text(f"{query} noticias 2026", max_results=3)
+            return "\n".join([r['body'] for r in results])
     except:
-        return None
-    return None
+        return "No hay datos recientes disponibles."
 
 # --- 4. CONFIGURACIÓN DE IA ---
 client = Groq(api_key=st.secrets["GROQ_API_KEY"].strip())
-icon_path = "logo_ruth.png"
-ruth_avatar = icon_path if os.path.exists(icon_path) else "●"
 
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
 # Mostrar Chat
 for msg in st.session_state.messages:
-    with st.chat_message(msg["role"], avatar=(ruth_avatar if msg["role"]=="assistant" else None)):
+    with st.chat_message(msg["role"]):
         st.markdown(msg["content"])
 
-# --- 5. INTERACCIÓN Y LÓGICA DE ACTUALIDAD ---
-if prompt := st.chat_input("Consulta a RUTH Professional..."):
+# --- 5. INTERACCIÓN ---
+if prompt := st.chat_input("¿En qué puedo ayudarte?"):
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
         st.markdown(prompt)
 
-    with st.chat_message("assistant", avatar=ruth_avatar):
-        contexto_web = ""
-        # Detectar si pregunta por fechas de 2024, 2025 o 2026
-        if any(x in prompt.lower() for x in ["2024", "2025", "2026", "hoy", "pasó", "enero", "febrero", "noticia"]):
-            with st.spinner("Investigando fuentes en tiempo real..."):
-                contexto_web = buscar_web(prompt)
-        
-        try:
-            # INSTRUCCIÓN MAESTRA: PROHIBIDO DECIR QUE NO TIENE ACCESO
-            system_instruction = (
-                "Eres RUTH. Tu conocimiento llega hasta hoy, 6 de febrero de 2026. "
-                "Si se te proporciona información bajo el título 'DATOS DE INTERNET', "
-                "ÚSALA obligatoriamente para responder. NO digas que no tienes acceso a tiempo real. "
-                "Tu objetivo es ser una asistente profesional actualizada."
-            )
-            
-            if contexto_web:
-                mensaje_para_ia = f"DATOS DE INTERNET PARA RESPONDER:\n{contexto_web}\n\nPREGUNTA DEL USUARIO: {prompt}"
-            else:
-                mensaje_para_ia = prompt
+    with st.chat_message("assistant"):
+        # ¿Es una pregunta de actualidad?
+        info_web = ""
+        if any(x in prompt.lower() for x in ["pasó", "noticia", "enero", "febrero", "2026", "hoy", "actual"]):
+            with st.spinner("Buscando en la red..."):
+                info_web = obtener_datos_web(prompt)
 
-            completion = client.chat.completions.create(
+        # FORZAMOS A LA IA A SER ACTUAL
+        instruccion_maestra = (
+            "Eres RUTH, una IA actualizada al 6 de febrero de 2026. "
+            f"Aquí tienes datos reales de internet: {info_web}. "
+            "PROHIBIDO decir que tu conocimiento es hasta 2023. Responde usando los datos de internet."
+        )
+
+        try:
+            chat_completion = client.chat.completions.create(
                 messages=[
-                    {"role": "system", "content": system_instruction},
-                    {"role": "user", "content": mensaje_para_ia}
+                    {"role": "system", "content": instruccion_maestra},
+                    {"role": "user", "content": prompt}
                 ],
                 model="llama-3.3-70b-versatile",
             )
-            
-            response = completion.choices[0].message.content
-            st.markdown(response)
-            st.session_state.messages.append({"role": "assistant", "content": response})
+            respuesta = chat_completion.choices[0].message.content
+            st.markdown(respuesta)
+            st.session_state.messages.append({"role": "assistant", "content": respuesta})
         except Exception as e:
-            st.error(f"Error: {e}")
+            st.error(f"Error técnico: {e}")
