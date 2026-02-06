@@ -5,82 +5,68 @@ from fpdf import FPDF
 import os
 import datetime
 
-# --- 1. CONFIGURACIÓN Y ESTÉTICA ULTRA-MINIMALISTA ---
+# --- 1. ESTÉTICA PREMIUM (NEÓN ROJO Y PATRÓN) ---
 st.set_page_config(page_title="RUTH Pro", page_icon="●", layout="wide", initial_sidebar_state="expanded")
 
 st.markdown("""
     <style>
-    /* Fondo Premium Unificado */
     [data-testid="stAppViewContainer"], [data-testid="stSidebar"], .stSidebarContent {
         background-color: #0e1117 !important;
         background-image: radial-gradient(#1a1d24 1px, transparent 1px) !important;
         background-size: 30px 30px !important;
     }
+    header, footer, .viewerBadge_container__1QS1n { visibility: hidden; }
 
-    /* FLECHA DE RESCATE FIJA */
-    [data-testid="stSidebarCollapsedControl"] {
-        background-color: #ff4b4b !important;
-        color: white !important;
-        border-radius: 0px 10px 10px 0px;
-        left: 0px !important; top: 20px !important; display: flex !important;
-    }
-
-    [data-testid="stHeader"] { background: rgba(0,0,0,0) !important; }
-    footer { visibility: hidden; }
-
-    /* Título Neón Rojo */
     @keyframes flicker {
-        0%, 18%, 22%, 25%, 53%, 57%, 100% { text-shadow: 0 0 4px #f00, 0 0 11px #f00, 0 0 19px #f00, 0 0 40px #f00; color: #ff4b4b; }
+        0%, 18%, 22%, 25%, 53%, 57%, 100% {
+            text-shadow: 0 0 4px #f00, 0 0 11px #f00, 0 0 19px #f00, 0 0 40px #f00;
+            color: #ff4b4b;
+        }
         20%, 24%, 55% { text-shadow: none; color: #330000; }
     }
     .ruth-header { text-align: center; padding-top: 1rem; color: #ff4b4b; font-size: 5rem; animation: flicker 3s infinite alternate; font-weight: 100; letter-spacing: 1.2rem; }
     .ruth-subtitle { text-align: center; color: #888; font-size: 0.8rem; letter-spacing: 0.3rem; margin-top: -10px; margin-bottom: 3rem; font-weight: bold;}
-    
+
     /* BOTONES GHOST MINIMALISTAS */
-    [data-testid="column"] { padding: 0px 1px !important; }
     .stButton>button {
-        border: none !important;
-        background-color: transparent !important;
-        color: #aaaaaa !important; 
-        width: 100% !important;
-        height: 40px !important;
-        transition: 0.2s ease;
-        text-transform: uppercase;
-        font-size: 0.48rem !important; 
-        font-weight: 400 !important;
-        white-space: nowrap !important;
-        cursor: pointer;
+        border: none !important; background-color: transparent !important; color: #aaaaaa !important; 
+        width: 100% !important; height: 40px !important; transition: 0.2s ease;
+        text-transform: uppercase; font-size: 0.48rem !important; font-weight: 400 !important;
+        white-space: nowrap !important; cursor: pointer;
     }
     @keyframes text-flicker {
-        0%, 100% { color: #ff4b4b; text-shadow: 0 0 8px #ff0000; opacity: 1; }
-        50% { color: #660000; text-shadow: none; opacity: 0.8; }
+        0%, 100% { color: #ff4b4b; text-shadow: 0 0 8px #ff0000; }
+        50% { color: #660000; text-shadow: none; }
     }
     .stButton>button:hover { animation: text-flicker 0.4s infinite; }
     div[data-testid="stMarkdownContainer"] p { color: #e0e0e0 !important; }
+    
+    /* Flecha de rescate */
+    [data-testid="stSidebarCollapsedControl"] { background-color: #ff4b4b !important; color: white !important; border-radius: 0 10px 10px 0; left: 0; top: 15px; padding: 5px; display: flex; }
     </style>
     <div class="ruth-header">R U T H</div>
     <div class="ruth-subtitle">UNIVERSAL BUSINESS SUITE</div>
 """, unsafe_allow_html=True)
 
-# --- 2. DICCIONARIOS ---
+# --- 2. DICCIONARIOS DE CONOCIMIENTO ---
 ESPECIALIDADES = {
-    "Abogada": "como Abogada Senior de Élite.",
-    "Amazon Pro": "como Especialista en Amazon FBA.",
-    "Marketing": "como Directora de Marketing Pro.",
-    "Estratega": "como CEO Advisor Estratégico.",
-    "Médico": "como Médico Especialista.",
-    "Finanzas": "como Analista de Inversiones.",
-    "IA Pro": "como Arquitecto de IA.",
-    "Seguridad": "como Experto en Ciberseguridad."
+    "Abogada": "como Abogada Senior de Élite experta en leyes y jurisprudencia.",
+    "Amazon Pro": "como Especialista en Amazon FBA, algoritmo A9 y e-commerce.",
+    "Marketing": "como Directora de Marketing y experta en Copywriting persuasivo.",
+    "Estratega": "como CEO Advisor y estratega de negocios internacionales.",
+    "Médico": "como Médico Especialista con profundo conocimiento en ciencias de la salud.",
+    "Finanzas": "como Analista de Inversiones y Wealth Manager.",
+    "IA Pro": "como Arquitecto de IA y experto en ingeniería de prompts.",
+    "Seguridad": "como Experto en Ciberseguridad y Privacidad de datos."
 }
 
 TONOS = {
-    "Sarcástica": "Tono cínico e inteligente.",
-    "Empática": "Tono suave y empático.",
-    "Analítica": "Tono puramente lógico.",
-    "Motivadora": "Tono enérgico e inspirador.",
-    "Ejecutiva": "Tono sobrio y directo.",
-    "Conspiranoica": "Tono suspicaz."
+    "Analítica": "Tono lógico, frío y basado estrictamente en datos.",
+    "Sarcástica": "Tono cínico, mordaz e inteligente.",
+    "Empática": "Tono suave, cálido y paciente.",
+    "Motivadora": "Tono enérgico, inspirador y positivo.",
+    "Ejecutiva": "Tono sobrio, breve y directo al grano.",
+    "Conspiranoica": "Tono suspicaz y detectivesco."
 }
 
 # --- 3. CONEXIONES ---
@@ -89,18 +75,6 @@ supabase = create_client(st.secrets["SUPABASE_URL"], st.secrets["SUPABASE_KEY"])
 icon_path = "logo_ruth.png"
 ruth_avatar = icon_path if os.path.exists(icon_path) else "●"
 
-def generar_pdf_bytes(mensajes, esp):
-    pdf = FPDF()
-    pdf.add_page(); pdf.set_font("Helvetica", "B", 16)
-    pdf.cell(0, 10, f"RUTH REPORT - {esp.upper()}", ln=True, align="C"); pdf.ln(10)
-    for msg in mensajes:
-        rol = "USER" if msg["role"] == "user" else "RUTH"
-        pdf.set_font("Helvetica", "B", 10); pdf.cell(0, 8, f"{rol}:", ln=True)
-        pdf.set_font("Helvetica", "", 10)
-        texto = msg["content"].encode('latin-1', 'replace').decode('latin-1')
-        pdf.multi_cell(0, 6, texto); pdf.ln(4)
-    return bytes(pdf.output())
-
 def guardar_nube(mensajes):
     if mensajes:
         try: supabase.table("chats").insert({"user_email": "Invitado", "messages": mensajes}).execute()
@@ -108,9 +82,9 @@ def guardar_nube(mensajes):
 
 if "messages" not in st.session_state: st.session_state.messages = []
 
-# --- 4. BARRA LATERAL (CENTRO DE MANDO MINIMALISTA) ---
+# --- 4. BARRA LATERAL (CENTRO DE MANDO) ---
 with st.sidebar:
-    st.markdown("<h2 style='color: white; font-weight: 200; font-size: 1.2rem; letter-spacing: 0.2rem;'>WORKSPACE</h2>", unsafe_allow_html=True)
+    st.markdown("<h2 style='color: white; font-weight: 200; font-size: 1.2rem;'>WORKSPACE</h2>", unsafe_allow_html=True)
     if st.button("NUEVA CONVERSACIÓN"):
         if st.session_state.messages: guardar_nube(st.session_state.messages)
         st.session_state.messages = []
@@ -120,26 +94,27 @@ with st.sidebar:
     especialidad = st.selectbox("ESPECIALIDAD:", list(ESPECIALIDADES.keys()))
     personalidad = st.selectbox("PERSONALIDAD:", list(TONOS.keys()))
     
-    # SECCIÓN LIBROS MINIMALISTA
+    # BIBLIOTECA DINÁMICA CORREGIDA
     st.divider()
     st.markdown("<p style='color: #888; font-size: 0.7rem;'>BIBLIOTECA</p>", unsafe_allow_html=True)
     if st.button("RECOMENDAR LITERATURA"):
-        orden = f"Como experta {ESPECIALIDADES[especialidad]}, recomiéndame 3 libros fundamentales. Indica gratis y de pago."
-        st.session_state.messages.append({"role": "user", "content": "SOLICITUD DE BIBLIOGRAFÍA"})
-        c_libros = client.chat.completions.create(
-            messages=[{"role":"system","content": f"Eres RUTH {ESPECIALIDADES[especialidad]} {TONOS[personalidad]}"}] + st.session_state.messages,
+        # Creamos una instrucción que fuerce el cambio de especialidad
+        instruccion_biblioteca = (
+            f"DIRECTIVA PRIORITARIA: Ignora cualquier rol anterior. "
+            f"Actúa AHORA MISMO {ESPECIALIDADES[especialidad]} con un {TONOS[personalidad]}. "
+            f"Recomiéndame 3 libros fundamentales de TU área actual ({especialidad}). "
+            f"Indica cuál es de acceso gratuito y cuáles son de pago."
+        )
+        # Añadimos al historial para que el usuario vea la petición
+        st.session_state.messages.append({"role": "user", "content": f"Solicitud de libros de {especialidad}"})
+        
+        # Llamada a la IA con la nueva especialidad forzada
+        c = client.chat.completions.create(
+            messages=[{"role":"system","content": instruccion_biblioteca}] + st.session_state.messages,
             model="llama-3.3-70b-versatile"
         )
-        st.session_state.messages.append({"role": "assistant", "content": c_libros.choices[0].message.content})
+        st.session_state.messages.append({"role": "assistant", "content": c.choices[0].message.content})
         st.rerun()
-
-    # EXPORTAR PDF
-    if st.session_state.messages:
-        st.divider()
-        try:
-            pdf_data = generar_pdf_bytes(st.session_state.messages, especialidad)
-            st.download_button(label="EXPORTAR PDF", data=pdf_data, file_name="RUTH_Reporte.pdf", mime="application/pdf")
-        except: pass
 
     st.divider()
     st.markdown("<p style='color: #888; font-size: 0.7rem;'>HISTORIAL CLOUD</p>", unsafe_allow_html=True)
@@ -153,21 +128,22 @@ with st.sidebar:
 
 # --- 5. CUERPO PRINCIPAL ---
 def enviar_c(t):
-    system_inst = f"Identidad TOTAL: {ESPECIALIDADES[especialidad]} Tono ABSOLUTO: {TONOS[personalidad]} Responde ahora."
+    # Inyección de personalidad forzada en botones
+    sys_inst = f"Identidad TOTAL: {ESPECIALIDADES[especialidad]} Tono ABSOLUTO: {TONOS[personalidad]}. Responde ahora."
     st.session_state.messages.append({"role": "user", "content": t})
-    c = client.chat.completions.create(messages=[{"role":"system","content": system_inst}] + st.session_state.messages, model="llama-3.3-70b-versatile")
+    c = client.chat.completions.create(messages=[{"role":"system","content": sys_inst}] + st.session_state.messages, model="llama-3.3-70b-versatile")
     st.session_state.messages.append({"role": "assistant", "content": c.choices[0].message.content})
 
 cols = st.columns(8); labels = list(ESPECIALIDADES.keys())
 for i in range(8):
     with cols[i]:
-        if st.button(labels[i].upper()): enviar_c(f"EJECUTAR: {labels[i]}"); st.rerun()
+        if st.button(labels[i].upper()): enviar_c(f"Ejecuta análisis como {labels[i]}"); st.rerun()
 
 st.divider()
 
 # --- 6. CHAT LOOP ---
 for msg in st.session_state.messages:
-    if "Identidad TOTAL" not in msg["content"] and "EJECUTAR:" not in msg["content"]:
+    if "Identidad TOTAL" not in msg["content"] and "DIRECTIVA PRIORITARIA" not in msg["content"]:
         av = ruth_avatar if msg["role"] == "assistant" else None
         with st.chat_message(msg["role"], avatar=av):
             st.markdown(msg["content"])
@@ -176,8 +152,9 @@ if prompt := st.chat_input(f"RUTH {especialidad}"):
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"): st.markdown(prompt)
     with st.chat_message("assistant", avatar=ruth_avatar):
-        system_inst = f"Identidad RUTH: {ESPECIALIDADES[especialidad]} Tono: {TONOS[personalidad]} PROHIBIDO disculparte."
-        c = client.chat.completions.create(messages=[{"role":"system","content": system_inst}] + st.session_state.messages, model="llama-3.3-70b-versatile")
+        # Inyección de personalidad forzada en chat manual
+        sys_inst = f"Eres RUTH. Rol: {ESPECIALIDADES[especialidad]} Tono: {TONOS[personalidad]}. Olvida roles anteriores."
+        c = client.chat.completions.create(messages=[{"role":"system","content": sys_inst}] + st.session_state.messages, model="llama-3.3-70b-versatile")
         res = c.choices[0].message.content
         st.markdown(res)
         st.session_state.messages.append({"role": "assistant", "content": res})
