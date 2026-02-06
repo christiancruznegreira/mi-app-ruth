@@ -26,18 +26,20 @@ if "GROQ_API_KEY" not in st.secrets:
 
 client = Groq(api_key=st.secrets["GROQ_API_KEY"].strip())
 
-# 5. Memoria del Chat con instrucciones MÁS FLEXIBLES
+# --- 5. MEMORIA Y REGLAS DE RUTH (REFORZADAS) ---
 if "messages" not in st.session_state or len(st.session_state.messages) == 0:
     st.session_state.messages = [
         {
             "role": "system", 
-            "content": "Eres RUTH, una asistente elegante. "
-                       "1. Si el usuario te pide una imagen, responde ÚNICAMENTE con 'GENERANDO_IMAGEN: description'. "
-                       "2. Si el usuario te pide que pares, que borres algo o te habla normalmente, responde de forma amable y NO generes imágenes. "
-                       "3. Prioriza siempre las órdenes directas del usuario."
+            "content": (
+                "Tu nombre es RUTH. ERE OBLIGATORIO que sigas estas reglas: "
+                "1. Eres capaz de generar imágenes. Si te piden una, NO digas que no puedes. "
+                "2. Para generar imágenes, escribe ÚNICAMENTE: 'GENERANDO_IMAGEN: [descripción en inglés]'. "
+                "3. No des explicaciones ni disculpas sobre ser un modelo de texto. "
+                "4. Si te piden una imagen de algo, simplemente genera el comando."
+            )
         }
     ]
-
 # Función para crear el enlace de la imagen
 def get_image_url(prompt_text):
     prompt_encoded = urllib.parse.quote(prompt_text)
