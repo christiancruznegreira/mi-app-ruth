@@ -1,136 +1,111 @@
 import streamlit as st
 from groq import Groq
-from supabase import create_client, Client
 import os
 import datetime
+from PyPDF2 import PdfReader
 
-# --- 1. CONFIGURACIÓN Y ESTÉTICA VISIBLE ---
-st.set_page_config(page_title="RUTH Ultimate", page_icon="●", layout="wide")
+# 1. CONFIGURACIÓN Y ESTÉTICA PREMIUM
+st.set_page_config(page_title="RUTH Ultra", page_icon="●", layout="wide")
 
 st.markdown("""
     <style>
-    /* Fondo y Patrón (Principal y Sidebar) */
-    [data-testid="stAppViewContainer"], [data-testid="stSidebar"], .stSidebarContent {
+    /* Fondo con Patrón */
+    [data-testid="stAppViewContainer"], [data-testid="stSidebar"] {
         background-color: #0e1117 !important;
         background-image: radial-gradient(#1a1d24 1px, transparent 1px) !important;
         background-size: 30px 30px !important;
     }
 
-    /* Asegurar que la Flecha Lateral sea VISIBLE y Blanca */
-    [data-testid="stSidebarCollapsedControl"] {
-        color: white !important;
-        background-color: #ff4b4b !important;
-        border-radius: 50%;
-        margin-left: 10px;
-    }
-
     /* Ocultar elementos de Streamlit */
-    header, footer, .viewerBadge_container__1QS1n { visibility: hidden; }
+    header, footer, .viewerBadge_container__1QS1n { visibility: hidden !important; }
 
     /* Branding RUTH */
-    .ruth-header { text-align: center; color: #ff4b4b; font-size: 3.5rem; letter-spacing: 0.8rem; font-weight: 200; text-shadow: 0px 0px 15px rgba(255, 75, 75, 0.4);}
+    .ruth-header { text-align: center; color: #ff4b4b; font-size: 3.5rem; letter-spacing: 0.8rem; font-weight: 200; margin-bottom: 0;}
     .ruth-subtitle { text-align: center; color: #888; font-size: 0.8rem; letter-spacing: 0.3rem; margin-top: -10px; margin-bottom: 2rem;}
 
-    /* Botones Rojos con Glow */
+    /* Botones de Acción Rápida */
     .stButton>button {
-        border-radius: 10px !important;
+        border-radius: 20px !important;
         border: 1px solid #ff4b4b !important;
         background-color: rgba(255, 75, 75, 0.05) !important;
         color: white !important;
         width: 100%;
         transition: 0.3s;
-        letter-spacing: 0.1rem;
     }
     .stButton>button:hover {
         background-color: #ff4b4b !important;
-        box-shadow: 0px 0px 20px rgba(255, 75, 75, 0.6) !important;
+        box-shadow: 0px 0px 15px rgba(255, 75, 75, 0.3);
     }
     </style>
-    
     <div class="ruth-header">R U T H</div>
-    <div class="ruth-subtitle">UNIVERSAL BUSINESS SUITE</div>
+    <div class="ruth-subtitle">ULTRA PROFESSIONAL SUITE</div>
 """, unsafe_allow_html=True)
 
-# --- 2. CONEXIONES ---
-client = Groq(api_key=st.secrets["GROQ_API_KEY"].strip())
-supabase = create_client(st.secrets["SUPABASE_URL"], st.secrets["SUPABASE_KEY"])
-icon_path = "logo_ruth.png"
-ruth_avatar = icon_path if os.path.exists(icon_path) else "●"
-
-def guardar_nube(mensajes):
-    try: supabase.table("chats").insert({"user_email": "Invitado", "messages": mensajes}).execute()
-    except: pass
-
-def cargar_nube():
-    try: 
-        res = supabase.table("chats").select("*").eq("user_email", "Invitado").order("created_at", desc=True).limit(5).execute()
-        return res.data
-    except: return []
-
+# 2. GESTIÓN DE MEMORIA
 if "messages" not in st.session_state: st.session_state.messages = []
+if "history" not in st.session_state: st.session_state.history = {}
 
-# --- 3. BARRA LATERAL (CONTROL TOTAL) ---
-with st.sidebar:
-    st.markdown("<h3 style='color: white; font-weight: 200; letter-spacing: 0.2rem;'>WORKSPACE</h3>", unsafe_allow_html=True)
+# Función para procesar la orden del usuario
+def procesar_prompt(texto_usuario):
+    st.session_state.messages.append({"role": "user", "content": texto_usuario})
     
-    # NUEVA CONVERSACIÓN
+    # Llamada a la IA
+    client = Groq(api_key=st.secrets["GROQ_API_KEY"].strip())
+    sys_msg = "Eres RUTH, una IA profesional de élite. Responde con elegancia y precisión."
+    full_msgs = [{"role": "system", "content": sys_msg}] + st.session_state.messages
+    
+    try:
+        completion = client.chat.completions.create(
+            messages=full_msgs,
+            model="llama-3.3-70b-versatile"
+        )
+        respuesta = completion.choices[0].message.content
+        st.session_state.messages.append({"role": "assistant", "content": respuesta})
+    except Exception as e:
+        st.error(f"Error: {e}")
+
+# 3. BARRA LATERAL
+with st.sidebar:
+    st.markdown("<h2 style='color: white; font-weight: 200;'>WORKSPACE</h2>", unsafe_allow_html=True)
     if st.button("＋ NUEVA CONVERSACIÓN"):
-        if st.session_state.messages: guardar_nube(st.session_state.messages)
+        if st.session_state.messages:
+            id_c = datetime.datetime.now().strftime("%H:%M")
+            st.session_state.history[f"Chat {id_c}"] = st.session_state.messages
         st.session_state.messages = []
         st.rerun()
     
     st.divider()
-    
-    # SELECTOR DE RUTH (MODOS)
-    modo = st.selectbox(
-        "Modo de RUTH:",
-        ["Abogada & Legal", "Amazon FBA Experta", "Copywriter Creativa", "Estratega CEO"]
-    )
-    
-    st.divider()
-    
-    # HISTORIAL DE CHATS
-    st.markdown("<p style='color: #888; font-size: 0.7rem; letter-spacing: 0.1rem;'>HISTORIAL RECIENTE</p>", unsafe_allow_html=True)
-    historial = cargar_nube()
-    if not historial:
-        st.caption("No hay chats guardados.")
-    else:
-        for chat in historial:
-            fecha = chat['created_at'][11:16]
-            if st.button(f"📜 Chat {fecha}", key=chat['id']):
-                st.session_state.messages = chat['messages']
-                st.rerun()
+    uploaded_file = st.file_uploader("📄 Analizador de PDF", type="pdf")
 
-# --- 4. CUERPO PRINCIPAL ---
+# 4. BOTONES DE ACCIÓN RÁPIDA (INTERFAZ)
 col1, col2, col3, col4 = st.columns(4)
-prompts_r = {"Email": "Redacta un email.", "Legal": "Revisa esta cláusula.", "Amazon": "SEO Amazon.", "Idea": "Idea disruptiva."}
 
-def enviar(t):
-    st.session_state.messages.append({"role": "user", "content": t})
-    c = client.chat.completions.create(messages=[{"role":"system","content":f"Eres RUTH modo {modo}"}]+st.session_state.messages, model="llama-3.3-70b-versatile")
-    st.session_state.messages.append({"role": "assistant", "content": c.choices[0].message.content})
-
-with col1: 
-    if st.button("📝 Email"): enviar(prompts_r["Email"]); st.rerun()
-with col2: 
-    if st.button("⚖️ Legal"): enviar(prompts_r["Legal"]); st.rerun()
-with col3: 
-    if st.button("📦 Amazon"): enviar(prompts_r["Amazon"]); st.rerun()
-with col4: 
-    if st.button("💡 Idea"): enviar(prompts_r["Idea"]); st.rerun()
+# Aquí está la corrección: cada botón llama a la función procesar_prompt
+with col1:
+    if st.button("📝 Redactar Email"):
+        procesar_prompt("RUTH, redacta un email profesional elegante para un cliente importante.")
+        st.rerun()
+with col2:
+    if st.button("⚖️ Revisar Cláusula"):
+        procesar_prompt("RUTH, analicemos esta cláusula legal. ¿Es segura y estándar?")
+        st.rerun()
+with col3:
+    if st.button("📦 SEO Amazon"):
+        procesar_prompt("RUTH, optimiza el SEO de este producto para Amazon: incluye título, bullet points y keywords.")
+        st.rerun()
+with col4:
+    if st.button("💡 Nueva Estrategia"):
+        procesar_prompt("RUTH, propón una estrategia de negocio disruptiva para aumentar las ventas este mes.")
+        st.rerun()
 
 st.divider()
 
-# --- 5. CHAT ---
+# 5. MOSTRAR CHAT
 for msg in st.session_state.messages:
-    with st.chat_message(msg["role"], avatar=(ruth_avatar if msg["role"]=="assistant" else None)):
+    with st.chat_message(msg["role"]):
         st.markdown(msg["content"])
 
-if prompt := st.chat_input(f"Hablando con RUTH {modo}..."):
-    st.session_state.messages.append({"role": "user", "content": prompt})
-    with st.chat_message("user"): st.markdown(prompt)
-    with st.chat_message("assistant", avatar=ruth_avatar):
-        c = client.chat.completions.create(messages=[{"role":"system","content":f"Eres RUTH modo {modo}"}]+st.session_state.messages, model="llama-3.3-70b-versatile")
-        res = c.choices[0].message.content
-        st.markdown(res)
-        st.session_state.messages.append({"role": "assistant", "content": res})
+# Entrada de texto manual
+if prompt := st.chat_input("Consulta a RUTH Ultra..."):
+    procesar_prompt(prompt)
+    st.rerun()
