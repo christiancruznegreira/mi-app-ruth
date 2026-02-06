@@ -2,7 +2,7 @@ import streamlit as st
 from groq import Groq
 
 # Configuración de página
-st.set_page_config(page_title="RUTH", page_icon="●")
+st.set_page_config(page_title="RUTH", page_icon="logo_ruth.png")
 
 # Título
 st.markdown("<h1 style='text-align: center; font-weight: 200;'>R U T H</h1>", unsafe_allow_html=True)
