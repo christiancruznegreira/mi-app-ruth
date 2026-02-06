@@ -1,6 +1,7 @@
 import streamlit as st
 from groq import Groq
 from supabase import create_client, Client
+from fpdf import FPDF # Nueva librería para PDF
 import os
 import datetime
 
@@ -23,7 +24,7 @@ st.markdown("""
         20%, 24%, 55% { text-shadow: none; color: #330000; }
     }
     .ruth-header { text-align: center; padding-top: 1rem; color: #ff4b4b; font-size: 5.5rem; animation: flicker 3s infinite alternate; font-weight: 100; letter-spacing: 1.5rem; margin-bottom: 0px;}
-    .ruth-subtitle { text-align: center; color: #888; font-size: 0.8rem; letter-spacing: 0.3rem; margin-top: -10px; margin-bottom: 3rem;}
+    .ruth-subtitle { text-align: center; color: #888; font-size: 0.8rem; letter-spacing: 0.3rem; margin-top: -15px; margin-bottom: 3rem;}
     .stButton>button { border-radius: 12px !important; border: 1px solid #ff4b4b !important; background-color: rgba(255, 75, 75, 0.05) !important; color: white !important; width: 100%; transition: 0.3s; font-size: 0.8rem !important; }
     .stButton>button:hover { background-color: #ff4b4b !important; box-shadow: 0px 0px 20px rgba(255, 75, 75, 0.6) !important; }
     div[data-testid="stMarkdownContainer"] p { color: #e0e0e0 !important; }
@@ -32,84 +33,97 @@ st.markdown("""
     <div class="ruth-subtitle">UNIVERSAL BUSINESS SUITE</div>
 """, unsafe_allow_html=True)
 
-# --- 2. PERSONALIDADES (Añadido Anime) ---
-PERSONALIDADES = {
-    "Abogada": "Eres RUTH Legal Advisor. Rigurosa y técnica.",
-    "Amazon Pro": "Eres RUTH Amazon Strategist. Comercial y directa.",
-    "Marketing": "Eres RUTH Copywriter. Persuasiva y creativa.",
-    "Estratega": "Eres RUTH CEO Advisor. Ejecutiva y fría.",
-    "Médico": "Eres RUTH Medical Specialist. Empática y científica.",
-    "Anime": "Eres RUTH Otaku Sensei. Experta en anime, manga y cultura japonesa. Tu tono es entusiasta, usas términos como 'nakama', 'shonen' o 'seinen' con propiedad y das recomendaciones profundas basadas en la trama y el estudio de animación."
-}
+# --- 2. FUNCION PARA GENERAR PDF ---
+def generar_pdf(mensajes, modo_actual):
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("Arial", "B", 16)
+    pdf.cell(0, 10, "RUTH - REPORTE PROFESIONAL", ln=True, align="C")
+    pdf.set_font("Arial", "I", 10)
+    pdf.cell(0, 10, f"Fecha: {datetime.datetime.now().strftime('%d/%m/%Y %H:%M')} | Modo: {modo_actual}", ln=True, align="C")
+    pdf.ln(10)
+    
+    for msg in mensajes:
+        rol = "USUARIO" if msg["role"] == "user" else "RUTH"
+        pdf.set_font("Arial", "B", 10)
+        pdf.cell(0, 8, f"{rol}:", ln=True)
+        pdf.set_font("Arial", "", 10)
+        # Multi_cell maneja párrafos largos
+        pdf.multi_cell(0, 6, msg["content"].encode('latin-1', 'replace').decode('latin-1'))
+        pdf.ln(4)
+    
+    return pdf.output(dest='S') # Retorna los bytes del PDF
 
 # --- 3. CONEXIONES ---
-icon_path = "logo_ruth.png"
-ruth_avatar = icon_path if os.path.exists(icon_path) else "●"
 client = Groq(api_key=st.secrets["GROQ_API_KEY"].strip())
 supabase = create_client(st.secrets["SUPABASE_URL"], st.secrets["SUPABASE_KEY"])
+icon_path = "logo_ruth.png"
+ruth_avatar = icon_path if os.path.exists(icon_path) else "●"
 
-def guardar_nube(mensajes):
-    if mensajes:
-        try: supabase.table("chats").insert({"user_email": "Invitado", "messages": mensajes}).execute()
-        except Exception: pass
-
-def cargar_nube():
-    try:
-        res = supabase.table("chats").select("*").eq("user_email", "Invitado").order("created_at", desc=True).limit(5).execute()
-        return res.data
-    except Exception: return []
+PERSONALIDADES = {
+    "Abogada": "RUTH Legal Advisor.",
+    "Amazon Pro": "RUTH Amazon Strategist.",
+    "Marketing": "RUTH Copywriter.",
+    "Estratega": "RUTH CEO Advisor.",
+    "Médico": "RUTH Medical Specialist.",
+    "Anime": "RUTH Otaku Sensei."
+}
 
 if "messages" not in st.session_state: st.session_state.messages = []
 
-# --- 4. SIDEBAR ---
+# --- 4. BARRA LATERAL ---
 with st.sidebar:
     st.markdown("<h2 style='color: white; font-weight: 200;'>WORKSPACE</h2>", unsafe_allow_html=True)
     if st.button("＋ NUEVA CONVERSACIÓN"):
-        if st.session_state.messages: guardar_nube(st.session_state.messages)
         st.session_state.messages = []
         st.rerun()
+    
+    # BOTÓN DE EXPORTACIÓN PDF
+    if st.session_state.messages:
+        st.divider()
+        st.markdown("### 📥 EXPORTAR")
+        pdf_bytes = generar_pdf(st.session_state.messages, "General")
+        st.download_button(
+            label="📄 Descargar Chat en PDF",
+            data=pdf_bytes,
+            file_name=f"Reporte_RUTH_{datetime.datetime.now().strftime('%Y%m%d_%H%M')}.pdf",
+            mime="application/pdf"
+        )
+
     st.divider()
-    modo = st.selectbox("Identidad Activa:", list(PERSONALIDADES.keys()))
+    modo = st.selectbox("Especialidad Activa:", list(PERSONALIDADES.keys()))
+    
     st.divider()
     st.markdown("<p style='color: #888;'>HISTORIAL CLOUD</p>", unsafe_allow_html=True)
-    historial = cargar_nube()
-    for chat in historial:
-        if st.button(f"📜 Chat {chat['created_at'][11:16]}", key=chat['id']):
-            st.session_state.messages = chat['messages']
-            st.rerun()
+    try:
+        res = supabase.table("chats").select("*").eq("user_email", "Invitado").order("created_at", desc=True).limit(5).execute()
+        for chat in res.data:
+            if st.button(f"📜 Chat {chat['created_at'][11:16]}", key=chat['id']):
+                st.session_state.messages = chat['messages']
+                st.rerun()
+    except: pass
 
-# --- 5. CUERPO PRINCIPAL (BOTONES PARA 6 ESPECIALISTAS) ---
+# --- 5. CUERPO PRINCIPAL ---
 def enviar_c(t):
     st.session_state.messages.append({"role": "user", "content": t})
     c = client.chat.completions.create(messages=[{"role":"system","content": PERSONALIDADES[modo]}] + st.session_state.messages, model="llama-3.3-70b-versatile")
     st.session_state.messages.append({"role": "assistant", "content": c.choices[0].message.content})
 
-# Ajustamos a 6 columnas para que queden todos los botones en línea
 cols = st.columns(6)
-opciones = [
-    ("📝 Email", "Redacta un correo profesional."),
-    ("⚖️ Análisis", "Realiza un análisis experto."),
-    ("📦 Amazon", "Optimiza SEO Amazon."),
-    ("💡 Idea", "Propón una idea disruptiva."),
-    ("🩺 Salud", "Explica un tema médico técnico."),
-    ("⛩️ Anime", "Dame una recomendación épica de anime según mis gustos.")
-]
+opciones = [("📝 Email", "Redacta un correo."), ("⚖️ Análisis", "Análisis experto."), ("📦 Amazon", "SEO Amazon."), ("💡 Idea", "Idea disruptiva."), ("🩺 Salud", "Resumen médico."), ("⛩️ Anime", "Recomendación.")]
 
-for i, (label, prompt_t) in enumerate(opciones):
+for i, (label, p_t) in enumerate(opciones):
     with cols[i]:
-        if st.button(label):
-            enviar_c(prompt_t)
-            st.rerun()
+        if st.button(label): enviar_c(p_t); st.rerun()
 
 st.divider()
 
-# Mostrar Chat
 for msg in st.session_state.messages:
     av = ruth_avatar if msg["role"] == "assistant" else None
     with st.chat_message(msg["role"], avatar=av):
         st.markdown(msg["content"])
 
-if prompt := st.chat_input(f"Consultando a RUTH {modo}..."):
+if prompt := st.chat_input(f"Hablando con RUTH {modo}..."):
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"): st.markdown(prompt)
     with st.chat_message("assistant", avatar=ruth_avatar):
