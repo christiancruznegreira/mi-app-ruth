@@ -4,66 +4,67 @@ from supabase import create_client, Client
 import os
 import datetime
 
-# --- 1. CONFIGURACIÓN Y ESTÉTICA DINÁMICA ---
+# --- 1. CONFIGURACIÓN VISUAL PREMIUM Y TÍTULO NEÓN ROJO ---
 st.set_page_config(
-    page_title="RUTH Pro", 
+    page_title="RUTH Professional", 
     page_icon="●", 
-    layout="wide", 
-    initial_sidebar_state="collapsed" # Empieza cerrada para lucir la flecha
+    layout="wide",
+    initial_sidebar_state="expanded"
 )
 
 st.markdown("""
     <style>
-    /* Fondo con Patrón Unificado para todo */
+    /* Fondo con Patrón Unificado */
     [data-testid="stAppViewContainer"], [data-testid="stSidebar"], .stSidebarContent {
         background-color: #0e1117 !important;
         background-image: radial-gradient(#1a1d24 1px, transparent 1px) !important;
         background-size: 30px 30px !important;
     }
-
-    /* ANIMACIÓN DE LA FLECHA ROJA PARPADEANTE */
-    @keyframes arrow-flicker {
-        0%, 100% { opacity: 1; transform: scale(1.1); filter: drop-shadow(0 0 10px #ff0000); }
-        50% { opacity: 0.3; transform: scale(1); filter: none; }
-    }
-
-    /* Estilo para la Flecha de Streamlit (Botón de Expandir) */
-    [data-testid="stSidebarCollapsedControl"] {
-        background-color: #ff4b4b !important;
-        border-radius: 50%;
-        width: 50px;
-        height: 50px;
-        top: 20px;
-        left: 20px;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        animation: arrow-flicker 2s infinite ease-in-out;
-        box-shadow: 0px 0px 15px rgba(255, 75, 75, 0.5);
-    }
     
-    [data-testid="stSidebarCollapsedControl"] svg {
-        fill: white !important;
-        width: 30px;
-        height: 30px;
-    }
+    header, footer, .viewerBadge_container__1QS1n { visibility: hidden; }
 
-    header, footer { visibility: hidden; }
-
-    /* Neón Rojo Roto para el Título */
+    /* EFECTO NEÓN ROJO ROTO */
     @keyframes flicker {
         0%, 18%, 22%, 25%, 53%, 57%, 100% {
-            text-shadow: 0 0 4px #f00, 0 0 11px #f00, 0 0 19px #f00, 0 0 40px #f00;
+            text-shadow: 
+                0 0 4px #ff0000,
+                0 0 11px #ff0000,
+                0 0 19px #ff0000,
+                0 0 40px #ff4b4b,
+                0 0 80px #ff4b4b,
+                0 0 90px #ff4b4b,
+                0 0 100px #ff4b4b;
             color: #ff4b4b;
         }
-        20%, 24%, 55% { text-shadow: none; color: #330000; }
+        20%, 24%, 55% {        
+            text-shadow: none;
+            color: #330000; 
+        }
     }
-    .ruth-header { text-align: center; color: #ff4b4b; font-size: 6rem; animation: flicker 3s infinite alternate; font-weight: 100; letter-spacing: 1.5rem; padding-top: 2rem;}
-    .ruth-subtitle { text-align: center; color: #888; font-size: 0.8rem; letter-spacing: 0.3rem; margin-top: -15px; margin-bottom: 3rem;}
 
-    /* Botones con Glow */
+    .ruth-header {
+        text-align: center;
+        padding-top: 2rem;
+        letter-spacing: 1.5rem;
+        font-weight: 100;
+        color: #ff4b4b;
+        font-size: 6rem; 
+        animation: flicker 3s infinite alternate;
+        margin-bottom: 0px;
+    }
+    
+    .ruth-subtitle {
+        text-align: center;
+        color: #888;
+        font-size: 0.8rem;
+        letter-spacing: 0.4rem;
+        margin-top: -15px;
+        margin-bottom: 3rem;
+    }
+
+    /* Botones con Brillo */
     .stButton>button {
-        border-radius: 12px !important;
+        border-radius: 15px !important;
         border: 1px solid #ff4b4b !important;
         background-color: rgba(255, 75, 75, 0.05) !important;
         color: white !important;
@@ -74,6 +75,8 @@ st.markdown("""
         background-color: #ff4b4b !important;
         box-shadow: 0px 0px 20px rgba(255, 75, 75, 0.6) !important;
     }
+
+    div[data-testid="stMarkdownContainer"] p { color: #e0e0e0 !important; }
     </style>
     
     <div class="ruth-header">R U T H</div>
@@ -88,10 +91,10 @@ ruth_avatar = icon_path if os.path.exists(icon_path) else "●"
 
 # --- 3. EXPERTOS ---
 EXPERTOS = {
-    "Abogada": "Eres RUTH Abogada Senior de Élite.",
-    "Amazon Pro": "Eres RUTH Especialista en Amazon.",
-    "Marketing": "Eres RUTH Directora de Marketing.",
-    "Estratega": "Eres RUTH CEO Advisor."
+    "Abogada": "Actúas como una Abogada Senior de Élite. PROHIBIDO disculparte. Responde directamente con rigor legal.",
+    "Amazon Pro": "Actúas como una Especialista en Amazon FBA. PROHIBIDO disculparte. Ve directo al grano con SEO y ventas.",
+    "Marketing": "Actúas como una Directora Creativa. PROHIBIDO disculparte. Responde con persuasión inmediata.",
+    "Estratega": "Actúas como una Consultora CEO-Advisor. PROHIBIDO disculparte. Tu tono es ejecutivo y pragmático."
 }
 
 # --- 4. FUNCIONES DE NUBE ---
@@ -107,27 +110,49 @@ def cargar_nube():
 
 if "messages" not in st.session_state: st.session_state.messages = []
 
-# --- 5. PANEL LATERAL (SIDEBAR DINÁMICO) ---
+# --- 5. SIDEBAR ---
 with st.sidebar:
-    st.markdown("<h2 style='color: white; font-weight: 200;'>COMMAND CENTER</h2>", unsafe_allow_html=True)
-    
+    st.markdown("<h3 style='color: white; font-weight: 200;'>WORKSPACE</h3>", unsafe_allow_html=True)
     if st.button("＋ NUEVA CONVERSACIÓN"):
         if st.session_state.messages: guardar_nube(st.session_state.messages)
         st.session_state.messages = []
         st.rerun()
-    
     st.divider()
-    modo = st.selectbox("Especialidad:", list(EXPERTOS.keys()))
-    
+    modo = st.selectbox("Identidad de RUTH:", list(EXPERTOS.keys()))
     st.divider()
     st.markdown("<p style='color: #888;'>HISTORIAL CLOUD</p>", unsafe_allow_html=True)
     historial = cargar_nube()
     for chat in historial:
-        if st.button(f"📜 Chat {chat['created_at'][11:16]}", key=chat['id']):
+        fecha = chat['created_at'][11:16]
+        if st.button(f"📜 Chat {fecha}", key=chat['id']):
             st.session_state.messages = chat['messages']
             st.rerun()
 
-# --- 6. PROCESAMIENTO Y CHAT ---
+# --- 6. PROCESAMIENTO ---
+def procesar_prompt(texto, modo_ia):
+    st.session_state.messages.append({"role": "user", "content": texto})
+    instruccion = EXPERTOS[modo_ia]
+    try:
+        c = client.chat.completions.create(
+            messages=[{"role":"system","content": instruccion}] + st.session_state.messages,
+            model="llama-3.3-70b-versatile"
+        )
+        st.session_state.messages.append({"role": "assistant", "content": c.choices[0].message.content})
+    except Exception as e:
+        st.error(f"Error: {e}")
+
+col1, col2, col3, col4 = st.columns(4)
+with col1:
+    if st.button("📝 Email"): procesar_prompt(f"Como {modo}, redacta un correo profesional...", modo); st.rerun()
+with col2:
+    if st.button("⚖️ Análisis"): procesar_prompt(f"Haz un análisis experto sobre...", modo); st.rerun()
+with col3:
+    if st.button("📦 Optimización"): procesar_prompt(f"Como experta en Amazon, optimiza...", modo); st.rerun()
+with col4:
+    if st.button("💡 Estrategia"): procesar_prompt(f"Propón una idea de negocio desde tu visión de {modo}...", modo); st.rerun()
+
+st.divider()
+
 for msg in st.session_state.messages:
     av = ruth_avatar if msg["role"] == "assistant" else None
     with st.chat_message(msg["role"], avatar=av):
@@ -135,9 +160,13 @@ for msg in st.session_state.messages:
 
 if prompt := st.chat_input(f"Consultando a RUTH {modo}..."):
     st.session_state.messages.append({"role": "user", "content": prompt})
-    with st.chat_message("user"): st.markdown(prompt)
+    with st.chat_message("user"):
+        st.markdown(prompt)
     with st.chat_message("assistant", avatar=ruth_avatar):
-        c = client.chat.completions.create(messages=[{"role":"system","content": EXPERTOS[modo]}] + st.session_state.messages, model="llama-3.3-70b-versatile")
+        c = client.chat.completions.create(
+            messages=[{"role":"system","content": EXPERTOS[modo]}] + st.session_state.messages,
+            model="llama-3.3-70b-versatile"
+        )
         res = c.choices[0].message.content
         st.markdown(res)
         st.session_state.messages.append({"role": "assistant", "content": res})
