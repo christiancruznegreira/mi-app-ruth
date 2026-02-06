@@ -1,5 +1,5 @@
 import streamlit as st
-import google.generativeai as genai
+from groq import Groq
 import os
 
 # --- 1. ESTÉTICA PREMIUM RUTH (ROJO Y NEGRO) ---
@@ -27,53 +27,59 @@ st.markdown("""
     <div class="ruth-subtitle">INTELIGENCIA ARTIFICIAL PARA PROFESIONALES</div>
 """, unsafe_allow_html=True)
 
-# --- 2. CONFIGURACIÓN DEL CEREBRO GOOGLE ---
-if "GOOGLE_API_KEY" not in st.secrets:
-    st.error("Error: Falta GOOGLE_API_KEY en los Secrets de Streamlit.")
+# --- 2. CONFIGURACIÓN DEL CEREBRO GROQ (EL QUE SÍ FUNCIONA) ---
+if "GROQ_API_KEY" not in st.secrets:
+    st.error("Error: Falta GROQ_API_KEY en los Secrets.")
     st.stop()
 
-genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
+client = Groq(api_key=st.secrets["GROQ_API_KEY"].strip())
+icon_path = "logo_ruth.png"
+ruth_avatar = icon_path if os.path.exists(icon_path) else "●"
 
-# Definimos el modelo de Google
-model = genai.GenerativeModel(
-    model_name="gemini-2.0-flash",
-    system_instruction="Eres RUTH, una asistente de inteligencia artificial profesional, sofisticada y de élite. Tu estilo es minimalista y directo. Hoy es 6 de febrero de 2026. Tienes acceso a información actualizada."
-)
-
-# --- 3. GESTIÓN DEL CHAT ---
-if "chat" not in st.session_state:
-    st.session_state.chat = model.start_chat(history=[])
+# Memoria del chat
+if "messages" not in st.session_state:
+    st.session_state.messages = []
 
 with st.sidebar:
     st.markdown("### PANEL DE CONTROL")
     if st.button("🔄 REINICIAR RUTH"):
-        st.session_state.chat = model.start_chat(history=[])
+        st.session_state.messages = []
         st.rerun()
     st.divider()
-    st.caption("Cerebro: Google Gemini 2.0 (Feb 2026)")
+    st.caption("Cerebro: Llama 3 (Groq High Speed)")
 
-# Mostrar historial de conversación
-for message in st.session_state.chat.history:
-    role = "assistant" if message.role == "model" else "user"
-    with st.chat_message(role):
-        st.markdown(message.parts[0].text)
+# Mostrar historial
+for msg in st.session_state.messages:
+    av = ruth_avatar if msg["role"] == "assistant" else None
+    with st.chat_message(msg["role"], avatar=av):
+        st.markdown(msg["content"])
 
-# Entrada de chat
+# --- 3. INTERACCIÓN ---
 if prompt := st.chat_input("Consulta a RUTH Professional..."):
+    st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
         st.markdown(prompt)
 
-    with st.chat_message("assistant"):
+    with st.chat_message("assistant", avatar=ruth_avatar):
         try:
-            # Enviamos el mensaje a Google y recibimos respuesta fluida
-            response = st.session_state.chat.send_message(prompt, stream=True)
-            full_res = ""
-            placeholder = st.empty()
+            # Instrucción Maestra para que RUTH sea útil hoy
+            system_prompt = (
+                "Eres RUTH, una asistente de IA profesional y sofisticada. "
+                "Hoy es viernes 6 de febrero de 2026. "
+                "Aunque no tengas búsqueda web en este momento, eres experta en negocios, leyes e inmobiliaria. "
+                "Responde siempre con elegancia y precisión profesional."
+            )
             
-            for chunk in response:
-                full_res += chunk.text
-                placeholder.markdown(full_res + "▌")
+            # Combinamos el historial con la instrucción
+            mensajes_completos = [{"role": "system", "content": system_prompt}] + st.session_state.messages
+
+            completion = client.chat.completions.create(
+                messages=mensajes_completos,
+                model="llama-3.3-70b-versatile",
+            )
             
-            placeholder.markdown(full_res)
+            respuesta = completion.choices[0].message.content
+            st.markdown(respuesta)
+            st.session_state.messages.append({"role": "assistant", "content": respuesta})
         except Exception as e:
             st.error(f"Error de sistema: {e}")
