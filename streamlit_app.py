@@ -5,7 +5,7 @@ from fpdf import FPDF
 import os
 import datetime
 
-# --- 1. CONFIGURACIÓN Y ESTÉTICA (SISTEMA INTEGRADO) ---
+# --- 1. CONFIGURACIÓN Y ESTÉTICA ULTRA-MINIMALISTA ---
 st.set_page_config(page_title="RUTH Pro", page_icon="●", layout="wide", initial_sidebar_state="expanded")
 
 st.markdown("""
@@ -17,18 +17,18 @@ st.markdown("""
         background-size: 30px 30px !important;
     }
 
-    /* FLECHA DE RESCATE (FIJA Y ROJA) */
+    /* FLECHA DE RESCATE FIJA */
     [data-testid="stSidebarCollapsedControl"] {
         background-color: #ff4b4b !important;
         color: white !important;
         border-radius: 0px 10px 10px 0px;
-        left: 0px !important; top: 20px !important; padding: 8px !important; display: flex !important;
+        left: 0px !important; top: 20px !important; display: flex !important;
     }
 
     [data-testid="stHeader"] { background: rgba(0,0,0,0) !important; }
     footer { visibility: hidden; }
 
-    /* Título Neón Rojo Roto */
+    /* Título Neón Rojo */
     @keyframes flicker {
         0%, 18%, 22%, 25%, 53%, 57%, 100% { text-shadow: 0 0 4px #f00, 0 0 11px #f00, 0 0 19px #f00, 0 0 40px #f00; color: #ff4b4b; }
         20%, 24%, 55% { text-shadow: none; color: #330000; }
@@ -62,7 +62,7 @@ st.markdown("""
     <div class="ruth-subtitle">UNIVERSAL BUSINESS SUITE</div>
 """, unsafe_allow_html=True)
 
-# --- 2. DICCIONARIOS DE CONOCIMIENTO ---
+# --- 2. DICCIONARIOS ---
 ESPECIALIDADES = {
     "Abogada": "como Abogada Senior de Élite.",
     "Amazon Pro": "como Especialista en Amazon FBA.",
@@ -75,12 +75,12 @@ ESPECIALIDADES = {
 }
 
 TONOS = {
-    "Sarcástica": "Tono cínico, mordaz e inteligente.",
-    "Analítica": "Tono puramente lógico y frío.",
-    "Empática": "Tono suave, paciente y empático.",
+    "Sarcástica": "Tono cínico e inteligente.",
+    "Empática": "Tono suave y empático.",
+    "Analítica": "Tono puramente lógico.",
     "Motivadora": "Tono enérgico e inspirador.",
-    "Ejecutiva": "Tono sobrio y directo al grano.",
-    "Conspiranoica": "Tono suspicaz y detectivesco."
+    "Ejecutiva": "Tono sobrio y directo.",
+    "Conspiranoica": "Tono suspicaz."
 }
 
 # --- 3. CONEXIONES ---
@@ -103,31 +103,29 @@ def generar_pdf_bytes(mensajes, esp):
 
 def guardar_nube(mensajes):
     if mensajes:
-        try:
-            supabase.table("chats").insert({"user_email": "Invitado", "messages": mensajes}).execute()
-        except Exception: pass
+        try: supabase.table("chats").insert({"user_email": "Invitado", "messages": mensajes}).execute()
+        except: pass
 
 if "messages" not in st.session_state: st.session_state.messages = []
 
-# --- 4. BARRA LATERAL (CON SECCIÓN LIBROS) ---
+# --- 4. BARRA LATERAL (CENTRO DE MANDO MINIMALISTA) ---
 with st.sidebar:
-    st.markdown("<h2 style='color: white; font-weight: 200;'>WORKSPACE</h2>", unsafe_allow_html=True)
-    if st.button("＋ NUEVA CONVERSACIÓN"):
+    st.markdown("<h2 style='color: white; font-weight: 200; font-size: 1.2rem; letter-spacing: 0.2rem;'>WORKSPACE</h2>", unsafe_allow_html=True)
+    if st.button("NUEVA CONVERSACIÓN"):
         if st.session_state.messages: guardar_nube(st.session_state.messages)
         st.session_state.messages = []
         st.rerun()
     
     st.divider()
-    especialidad = st.selectbox("Especialidad:", list(ESPECIALIDADES.keys()))
-    personalidad = st.selectbox("Personalidad:", list(TONOS.keys()))
+    especialidad = st.selectbox("ESPECIALIDAD:", list(ESPECIALIDADES.keys()))
+    personalidad = st.selectbox("PERSONALIDAD:", list(TONOS.keys()))
     
-    # SECCIÓN LIBROS
+    # SECCIÓN LIBROS MINIMALISTA
     st.divider()
-    st.markdown("### 📚 SECCIÓN LIBROS")
-    if st.button("📖 RECOMENDAR LITERATURA"):
-        orden_libros = f"Como experta {ESPECIALIDADES[especialidad]}, recomiéndame 3 libros fundamentales de mi área. Indica cuáles son de bibliotecas gratuitas (con link si es posible) y cuáles son de pago imprescindibles."
-        st.session_state.messages.append({"role": "user", "content": orden_libros})
-        # Llamada a la IA para libros
+    st.markdown("<p style='color: #888; font-size: 0.7rem;'>BIBLIOTECA</p>", unsafe_allow_html=True)
+    if st.button("RECOMENDAR LITERATURA"):
+        orden = f"Como experta {ESPECIALIDADES[especialidad]}, recomiéndame 3 libros fundamentales. Indica gratis y de pago."
+        st.session_state.messages.append({"role": "user", "content": "SOLICITUD DE BIBLIOGRAFÍA"})
         c_libros = client.chat.completions.create(
             messages=[{"role":"system","content": f"Eres RUTH {ESPECIALIDADES[especialidad]} {TONOS[personalidad]}"}] + st.session_state.messages,
             model="llama-3.3-70b-versatile"
@@ -135,27 +133,27 @@ with st.sidebar:
         st.session_state.messages.append({"role": "assistant", "content": c_libros.choices[0].message.content})
         st.rerun()
 
-    # Exportación PDF
+    # EXPORTAR PDF
     if st.session_state.messages:
         st.divider()
         try:
             pdf_data = generar_pdf_bytes(st.session_state.messages, especialidad)
-            st.download_button(label="📥 EXPORTAR PDF", data=pdf_data, file_name="RUTH_Reporte.pdf", mime="application/pdf")
-        except Exception: pass
+            st.download_button(label="EXPORTAR PDF", data=pdf_data, file_name="RUTH_Reporte.pdf", mime="application/pdf")
+        except: pass
 
     st.divider()
     st.markdown("<p style='color: #888; font-size: 0.7rem;'>HISTORIAL CLOUD</p>", unsafe_allow_html=True)
     try:
         res = supabase.table("chats").select("*").eq("user_email", "Invitado").order("created_at", desc=True).limit(5).execute()
         for chat in res.data:
-            m_u = chat['messages'][0]['content'][:20].upper()+"..." if chat['messages'] else "Vacío"
+            m_u = chat['messages'][0]['content'][:20].upper()+"..." if chat['messages'] else "VACÍO"
             if st.button(f"{m_u}", key=chat['id']):
                 st.session_state.messages = chat['messages']; st.rerun()
-    except Exception: pass
+    except: pass
 
-# --- 5. LOGICA DE IA (ACTITUD EN TIEMPO REAL) ---
+# --- 5. CUERPO PRINCIPAL ---
 def enviar_c(t):
-    system_inst = f"Identidad TOTAL: {ESPECIALIDADES[especialidad]} Tono ABSOLUTO: {TONOS[personalidad]} Responde ahora mismo."
+    system_inst = f"Identidad TOTAL: {ESPECIALIDADES[especialidad]} Tono ABSOLUTO: {TONOS[personalidad]} Responde ahora."
     st.session_state.messages.append({"role": "user", "content": t})
     c = client.chat.completions.create(messages=[{"role":"system","content": system_inst}] + st.session_state.messages, model="llama-3.3-70b-versatile")
     st.session_state.messages.append({"role": "assistant", "content": c.choices[0].message.content})
@@ -163,19 +161,18 @@ def enviar_c(t):
 cols = st.columns(8); labels = list(ESPECIALIDADES.keys())
 for i in range(8):
     with cols[i]:
-        if st.button(labels[i].upper()): enviar_c(f"Ejecuta acción como: {labels[i]}"); st.rerun()
+        if st.button(labels[i].upper()): enviar_c(f"EJECUTAR: {labels[i]}"); st.rerun()
 
 st.divider()
 
 # --- 6. CHAT LOOP ---
 for msg in st.session_state.messages:
-    # Ocultamos la orden técnica de libros del chat visual para que sea limpio
-    if "recomiéndame 3 libros" not in msg["content"] and "Identidad TOTAL" not in msg["content"]:
+    if "Identidad TOTAL" not in msg["content"] and "EJECUTAR:" not in msg["content"]:
         av = ruth_avatar if msg["role"] == "assistant" else None
         with st.chat_message(msg["role"], avatar=av):
             st.markdown(msg["content"])
 
-if prompt := st.chat_input(f"Consulta a RUTH {especialidad}"):
+if prompt := st.chat_input(f"RUTH {especialidad}"):
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"): st.markdown(prompt)
     with st.chat_message("assistant", avatar=ruth_avatar):
