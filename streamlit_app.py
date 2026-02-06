@@ -4,115 +4,82 @@ import os
 import urllib.parse
 import random
 
-# 1. ESTÉTICA PREMIUM (NEGRA CON PUNTOS Y TÍTULO ROJO)
-st.set_page_config(page_title="RUTH", page_icon="●")
+# --- ESTÉTICA PREMIUM NEGRA Y ROJA ---
+st.set_page_config(page_title="RUTH Intelligence", page_icon="●", layout="wide")
+
 st.markdown("""
     <style>
-    /* Fondo Oscuro con Puntos */
     [data-testid="stAppViewContainer"] {
         background-color: #0e1117;
         background-image: radial-gradient(#1a1d24 1px, transparent 1px);
         background-size: 30px 30px;
     }
-    
-    /* Ocultar elementos innecesarios */
     #MainMenu, footer, header, .viewerBadge_container__1QS1n {visibility: hidden; display: none;}
+    .ruth-header {text-align: center; padding-top: 2rem; letter-spacing: 0.8rem; font-weight: 200; color: #ff4b4b; font-size: 4rem;}
+    div[data-testid="stMarkdownContainer"] p {color: #e0e0e0 !important; font-size: 1.1rem;}
     
-    /* Título RUTH en ROJO ELEGANTE */
-    .ruth-header {
-        text-align: center; 
-        padding-top: 2rem; 
-        letter-spacing: 0.8rem; 
-        font-weight: 200; 
-        color: #ff4b4b; /* Rojo Streamlit / Premium */
-        font-size: 3.5rem;
-        text-shadow: 0px 0px 20px rgba(255, 75, 75, 0.2);
-    }
-    
-    /* Color de texto */
-    div[data-testid="stMarkdownContainer"] p {color: #e0e0e0 !important;}
-    
-    /* Ajuste de la caja de chat */
-    .stChatInput {
-        border: 1px solid #ff4b4b44 !important;
+    /* Estilo de la barra lateral */
+    [data-testid="stSidebar"] {
+        background-color: #161a21;
+        border-right: 1px solid #333;
     }
     </style>
     <div class="ruth-header">R U T H</div>
+    <p style='text-align: center; color: #888; font-size: 0.9rem; margin-top: -1.5rem; letter-spacing: 0.3rem;'>UNIVERSAL PROFESSIONAL INTELLIGENCE</p>
 """, unsafe_allow_html=True)
 
-# 2. CONTROL LATERAL
+# --- PANEL DE CONTROL PROFESIONAL ---
 with st.sidebar:
-    if st.button("Reiniciar Sistema"):
+    st.markdown("### 🛠 Perfil del Profesional")
+    profesion = st.text_input("¿Cuál es tu profesión?", placeholder="Ej: Abogado Penalista, Arquitecto...")
+    objetivo = st.text_area("¿Cuál es tu objetivo hoy?", placeholder="Ej: Redactar contratos, diseñar planos...")
+    
+    st.divider()
+    if st.button("Reiniciar Sesión Inteligente"):
         st.session_state.messages = []
         st.rerun()
 
-# 3. CONEXIÓN
+# --- CEREBRO DE RUTH ---
 client = Groq(api_key=st.secrets["GROQ_API_KEY"].strip())
 icon_path = "logo_ruth.png"
 ruth_avatar = icon_path if os.path.exists(icon_path) else "●"
 
-# 4. MEMORIA CONVERSACIONAL (SIN FORZAR IMÁGENES)
+# Instrucciones Universales de RUTH
+sys_message = (
+    f"Tu nombre es RUTH. Eres una Inteligencia de Grado Profesional. "
+    f"Te estás comunicando con un {profesion if profesion else 'Profesional experto'}. "
+    f"Tu objetivo actual es: {objetivo if objetivo else 'Asistir en tareas de alta complejidad'}. "
+    "Tu tono es ejecutivo, preciso y de altísimo nivel. No usas lenguaje infantil. "
+    "Si el usuario pide un análisis, dáselo con estructura de puntos. "
+    "Si pide una imagen técnica, responde con DIBUJO: [descripción]."
+)
+
 if "messages" not in st.session_state or len(st.session_state.messages) == 0:
-    st.session_state.messages = [
-        {
-            "role": "system", 
-            "content": "Eres RUTH, una asistente sofisticada y conversacional. Habla de forma elegante y humana. "
-                       "SOLO si el usuario pide explícitamente una imagen, foto o dibujo, añade al final de tu respuesta: 'DIBUJO: [descripción en inglés]'. "
-                       "Si no te piden una imagen, limítate a hablar normalmente."
-        }
-    ]
+    st.session_state.messages = [{"role": "system", "content": sys_message}]
 
-def get_image_url(prompt_text):
-    clean_prompt = prompt_text.replace("DIBUJO:", "").strip()
-    prompt_enc = urllib.parse.quote(clean_prompt)
-    seed = random.randint(1, 99999)
-    return f"https://image.pollinations.ai/prompt/{prompt_enc}?width=1024&height=1024&seed={seed}&nologo=true"
-
-# 5. MOSTRAR CHAT
+# --- INTERFAZ DE TRABAJO ---
 for msg in st.session_state.messages:
     if msg["role"] != "system":
-        with st.chat_message(msg["role"], avatar=(ruth_avatar if msg["role"]=="assistant" else None)):
-            # Solo intentamos mostrar imagen si el comando existe en el mensaje
-            if "DIBUJO:" in msg["content"]:
-                partes = msg["content"].split("DIBUJO:")
-                texto = partes[0].strip()
-                comando = partes[1].strip()
-                if texto: st.markdown(texto)
-                st.image(get_image_url(comando), use_container_width=True)
-            else:
-                st.markdown(msg["content"])
+        av = ruth_avatar if msg["role"]=="assistant" else None
+        with st.chat_message(msg["role"], avatar=av):
+            st.markdown(msg["content"])
 
-# 6. INTERACCIÓN
-if prompt := st.chat_input("Escribe tu consulta..."):
+if prompt := st.chat_input("Ingresa tu requerimiento profesional..."):
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
         st.markdown(prompt)
 
     with st.chat_message("assistant", avatar=ruth_avatar):
         try:
-            # La IA responde
-            response = client.chat.completions.create(
+            # Actualizamos el sistema con la profesión actual antes de cada mensaje
+            st.session_state.messages[0]["content"] = sys_message
+            
+            completion = client.chat.completions.create(
                 messages=st.session_state.messages,
                 model="llama-3.3-70b-versatile",
-            ).choices[0].message.content
-            
-            # Verificamos si el usuario pidió imagen para evitar errores
-            palabras_clave = ["imagen", "dibujo", "foto", "dibuja", "muéstrame", "crea"]
-            pide_imagen = any(palabra in prompt.lower() for palabra in palabras_clave)
-
-            # Si hay comando de dibujo en la respuesta, lo mostramos
-            if "DIBUJO:" in response and pide_imagen:
-                partes = response.split("DIBUJO:")
-                texto = partes[0].strip()
-                comando = partes[1].strip()
-                if texto: st.markdown(texto)
-                st.image(get_image_url(comando), use_container_width=True)
-            else:
-                # Si la IA puso DIBUJO: por error sin que se lo pidieran, lo limpiamos
-                clean_response = response.split("DIBUJO:")[0].strip()
-                st.markdown(clean_response)
-                response = clean_response
-                
+            )
+            response = completion.choices[0].message.content
+            st.markdown(response)
             st.session_state.messages.append({"role": "assistant", "content": response})
         except Exception as e:
-            st.error(f"Error: {e}")
+            st.error(f"Error de sistema: {e}")
