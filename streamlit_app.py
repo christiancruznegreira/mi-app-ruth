@@ -5,17 +5,34 @@ from fpdf import FPDF
 import os
 import datetime
 
-# --- 1. ESTÉTICA PREMIUM (MANTENEMOS EL DISEÑO) ---
+# --- 1. CONFIGURACIÓN Y ESTÉTICA (BARRA LATERAL PROTEGIDA) ---
 st.set_page_config(page_title="RUTH Pro", page_icon="●", layout="wide", initial_sidebar_state="expanded")
 
 st.markdown("""
     <style>
+    /* Fondo con Patrón Unificado */
     [data-testid="stAppViewContainer"], [data-testid="stSidebar"], .stSidebarContent {
         background-color: #0e1117 !important;
         background-image: radial-gradient(#1a1d24 1px, transparent 1px) !important;
         background-size: 30px 30px !important;
     }
-    header, footer { visibility: hidden; }
+
+    /* FLECHA DE RESCATE: Visible y Roja si la barra se cierra */
+    [data-testid="stSidebarCollapsedControl"] {
+        background-color: #ff4b4b !important;
+        color: white !important;
+        border-radius: 0px 10px 10px 0px;
+        left: 0px;
+        top: 15px;
+        padding: 5px;
+    }
+
+    /* Ocultar elementos de Streamlit sin romper la flecha */
+    [data-testid="stHeader"] { background: rgba(0,0,0,0) !important; }
+    footer { visibility: hidden; }
+    .viewerBadge_container__1QS1n { display: none; }
+
+    /* EFECTO NEÓN ROJO ROTO */
     @keyframes flicker {
         0%, 18%, 22%, 25%, 53%, 57%, 100% {
             text-shadow: 0 0 4px #f00, 0 0 11px #f00, 0 0 19px #f00, 0 0 40px #f00;
@@ -24,9 +41,9 @@ st.markdown("""
         20%, 24%, 55% { text-shadow: none; color: #330000; }
     }
     .ruth-header { text-align: center; padding-top: 1rem; color: #ff4b4b; font-size: 5rem; animation: flicker 3s infinite alternate; font-weight: 100; letter-spacing: 1.2rem; }
-    .ruth-subtitle { text-align: center; color: #888; font-size: 0.8rem; letter-spacing: 0.3rem; margin-top: -10px; margin-bottom: 3rem; font-weight: bold;}
+    .ruth-subtitle { text-align: center; color: #888; font-size: 0.8rem; letter-spacing: 0.3rem; margin-top: -15px; margin-bottom: 3rem; font-weight: bold;}
     
-    /* BOTONES GHOST */
+    /* BOTONES GHOST MINIMALISTAS */
     [data-testid="column"] { padding: 0px 1px !important; text-align: center !important; }
     .stButton>button {
         border: none !important;
@@ -56,7 +73,7 @@ st.markdown("""
 # --- 2. DICCIONARIOS DE INTELIGENCIA CRUZADA ---
 ESPECIALIDADES = {
     "Abogada": "como experta en Derecho y Consultoría Legal.",
-    "Amazon Pro": "como Especialista en Amazon FBA y algoritmos de venta.",
+    "Amazon Pro": "como Especialista en Amazon FBA y algoritmos.",
     "Marketing": "como Directora de Marketing y Copywriter Pro.",
     "Estratega": "como CEO Advisor y Estratega de Negocios.",
     "Médico": "como Médico Especialista con rigor científico.",
@@ -66,11 +83,11 @@ ESPECIALIDADES = {
 }
 
 TONOS = {
-    "Analítica": "Tu tono es puramente basado en datos, frío, preciso y extremadamente lógico. No usas adornos lingüísticos.",
-    "Motivadora": "Tu tono es inspirador, lleno de energía y enfocado en empoderar al usuario. Buscas el éxito con optimismo.",
-    "Sarcástica": "Tu tono es irónico, brillante pero mordaz. Dices las verdades de forma cínica y eficiente.",
-    "Ejecutiva": "Tu tono es de alto nivel CEO. Breve, directo al grano y enfocado en el retorno de inversión (ROI).",
-    "Empática": "Tu tono es suave, comprensivo y paciente. Te enfocas en el bienestar del usuario."
+    "Analítica": "Tu tono es basado en datos, frío, preciso y lógico.",
+    "Motivadora": "Tu tono es inspirador, lleno de energía y optimismo.",
+    "Sarcástica": "Tu tono es irónico, brillante pero mordaz.",
+    "Ejecutiva": "Tu tono es de alto nivel CEO, breve y directo al grano.",
+    "Empática": "Tu tono es suave, comprensivo y paciente."
 }
 
 # --- 3. CONEXIONES ---
@@ -79,19 +96,17 @@ supabase = create_client(st.secrets["SUPABASE_URL"], st.secrets["SUPABASE_KEY"])
 icon_path = "logo_ruth.png"
 ruth_avatar = icon_path if os.path.exists(icon_path) else "●"
 
+if "messages" not in st.session_state: st.session_state.messages = []
+
 # --- 4. BARRA LATERAL (DOBLE SELECTOR) ---
 with st.sidebar:
     st.markdown("<h2 style='color: white; font-weight: 200;'>WORKSPACE</h2>", unsafe_allow_html=True)
     if st.button("＋ NUEVA CONVERSACIÓN"):
         st.session_state.messages = []
         st.rerun()
-    
     st.divider()
-    # SELECTOR DE ESPECIALIDAD
     especialidad = st.selectbox("Especialidad:", list(ESPECIALIDADES.keys()))
-    # SELECTOR DE PERSONALIDAD
     personalidad = st.selectbox("Personalidad:", list(TONOS.keys()))
-    
     st.divider()
     st.markdown("<p style='color: #888; font-size: 0.7rem;'>HISTORIAL CLOUD</p>", unsafe_allow_html=True)
     try:
@@ -107,11 +122,9 @@ with st.sidebar:
                 st.rerun()
     except: pass
 
-# --- 5. LÓGICA DE RESPUESTA ADAPTATIVA ---
-if "messages" not in st.session_state: st.session_state.messages = []
-
+# --- 5. LÓGICA DE BOTONES ---
 def enviar_c(etiqueta):
-    prompt_final = f"Actúa {ESPECIALIDADES[especialidad]} {TONOS[personalidad]} Responde a la orden de: {etiqueta}"
+    prompt_final = f"Actúa {ESPECIALIDADES[especialidad]} {TONOS[personalidad]} Orden: {etiqueta}"
     st.session_state.messages.append({"role": "user", "content": prompt_final})
     c = client.chat.completions.create(
         messages=[{"role":"system","content": f"Eres RUTH {ESPECIALIDADES[especialidad]} {TONOS[personalidad]}"}] + st.session_state.messages,
@@ -119,7 +132,6 @@ def enviar_c(etiqueta):
     )
     st.session_state.messages.append({"role": "assistant", "content": c.choices[0].message.content})
 
-# BotonesGhost
 cols = st.columns(8)
 labels = ["LEGAL", "AMAZON", "MARKETING", "ESTRATEGIA", "SALUD", "FINANZAS", "IA PRO", "SEGURIDAD"]
 for i in range(8):
@@ -128,8 +140,8 @@ for i in range(8):
 
 st.divider()
 
+# --- 6. CHAT ---
 for msg in st.session_state.messages:
-    # Ocultar los prompts de sistema internos del historial visual
     if "Actúa como" not in msg["content"]:
         av = ruth_avatar if msg["role"] == "assistant" else None
         with st.chat_message(msg["role"], avatar=av):
@@ -139,12 +151,8 @@ if prompt := st.chat_input(f"Hablando con RUTH {especialidad} ({personalidad})..
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"): st.markdown(prompt)
     with st.chat_message("assistant", avatar=ruth_avatar):
-        # COMBINAMOS ESPECIALIDAD + TONO EN EL SISTEMA
-        system_instruccion = f"Eres RUTH. Tu rol es actuar {ESPECIALIDADES[especialidad]} {TONOS[personalidad]} PROHIBIDO disculparte por tu rol."
-        c = client.chat.completions.create(
-            messages=[{"role":"system","content": system_instruccion}] + st.session_state.messages,
-            model="llama-3.3-70b-versatile"
-        )
+        system_inst = f"Eres RUTH. Tu rol es actuar {ESPECIALIDADES[especialidad]} {TONOS[personalidad]}"
+        c = client.chat.completions.create(messages=[{"role":"system","content": system_inst}] + st.session_state.messages, model="llama-3.3-70b-versatile")
         res = c.choices[0].message.content
         st.markdown(res)
         st.session_state.messages.append({"role": "assistant", "content": res})
