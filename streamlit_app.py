@@ -24,11 +24,17 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# --- 2. SISTEMA DE LOGIN (GOOGLE) ---
+# --- 2. SISTEMA DE LOGIN (CORREGIDO PARA EVITAR TYPEERROR) ---
+# Extraemos los datos manualmente de los Secrets
+google_creds = st.secrets["GOOGLE_AUTH"]
+
 auth = Authenticate(
     secret_name='GOOGLE_AUTH',
-    cookie_name='ruth_session',
-    key='ruth_secret_key_2026',
+    client_id=google_creds['client_id'],
+    client_secret=google_creds['client_secret'],
+    redirect_uri=google_creds['redirect_uri'],
+    cookie_name='ruth_session_cookie',
+    key=google_creds['cookie_key'],
     cookie_expiry_days=30,
 )
 
@@ -41,7 +47,7 @@ if not st.session_state.get('connected'):
     
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
-        auth.login() # Muestra el botón de Google
+        auth.login() 
     st.stop()
 
 # --- SI ESTÁ CONECTADO, OBTENEMOS DATOS ---
@@ -55,10 +61,10 @@ icon_path = "logo_ruth.png"
 ruth_avatar = icon_path if os.path.exists(icon_path) else "●"
 
 EXPERTOS = {
-    "Abogada": "Eres RUTH Abogada de Élite. Sin disculpas, directa y técnica.",
-    "Amazon Pro": "Eres RUTH Amazon Experta. Sin disculpas, directa y comercial.",
-    "Marketing": "Eres RUTH Copywriter Pro. Sin disculpas, persuasiva.",
-    "Estratega": "Eres RUTH CEO Strategist. Sin disculpas, pragmática."
+    "Abogada": "Eres RUTH Abogada Senior. Rigurosa y técnica.",
+    "Amazon Pro": "Eres RUTH Amazon Experta. Comercial y estratégica.",
+    "Marketing": "Eres RUTH Directora de Marketing. Creativa y persuasiva.",
+    "Estratega": "Eres RUTH Business Estratega. Ejecutiva y fría."
 }
 
 def guardar_nube(mensajes):
@@ -73,7 +79,7 @@ def cargar_nube():
 
 if "messages" not in st.session_state: st.session_state.messages = []
 
-# --- 4. BARRA LATERAL (WORKSPACE PRIVADO) ---
+# --- 4. BARRA LATERAL ---
 with st.sidebar:
     st.markdown(f"<p style='color: #ff4b4b; font-weight: bold;'>Hola, {user_name}</p>", unsafe_allow_html=True)
     if st.button("＋ NUEVA CONVERSACIÓN"):
@@ -85,7 +91,7 @@ with st.sidebar:
     modo = st.selectbox("Especialidad:", list(EXPERTOS.keys()))
     
     st.divider()
-    st.markdown("<p style='color: #888; font-size: 0.8rem;'>HISTORIAL PRIVADO EN NUBE</p>", unsafe_allow_html=True)
+    st.markdown("<p style='color: #888; font-size: 0.8rem;'>TU HISTORIAL EN NUBE</p>", unsafe_allow_html=True)
     historial = cargar_nube()
     for chat in historial:
         fecha = chat['created_at'][11:16]
@@ -99,7 +105,7 @@ with st.sidebar:
 
 # --- 5. CUERPO PRINCIPAL ---
 st.markdown('<div class="ruth-header">R U T H</div>', unsafe_allow_html=True)
-st.markdown(f'<div class="ruth-subtitle">INTELIGENCIA EN MODO {modo.upper()}</div>', unsafe_allow_html=True)
+st.markdown(f'<div class="ruth-subtitle">MÓDULO {modo.upper()} ACTIVO</div>', unsafe_allow_html=True)
 
 for msg in st.session_state.messages:
     with st.chat_message(msg["role"], avatar=(ruth_avatar if msg["role"]=="assistant" else None)):
@@ -117,3 +123,4 @@ if prompt := st.chat_input(f"¿En qué puede ayudarte RUTH hoy?"):
         res = c.choices[0].message.content
         st.markdown(res)
         st.session_state.messages.append({"role": "assistant", "content": res})
+        
