@@ -5,12 +5,12 @@ from fpdf import FPDF
 import os
 import datetime
 
-# --- 1. CONFIGURACIÓN Y ESTÉTICA (BARRA LATERAL PROTEGIDA) ---
+# --- 1. CONFIGURACIÓN Y ESTÉTICA PREMIUM ---
 st.set_page_config(page_title="RUTH Pro", page_icon="●", layout="wide", initial_sidebar_state="expanded")
 
 st.markdown("""
     <style>
-    /* Fondo Premium */
+    /* Fondo Premium Unificado */
     [data-testid="stAppViewContainer"], [data-testid="stSidebar"], .stSidebarContent {
         background-color: #0e1117 !important;
         background-image: radial-gradient(#1a1d24 1px, transparent 1px) !important;
@@ -31,7 +31,7 @@ st.markdown("""
     [data-testid="stHeader"] { background: rgba(0,0,0,0) !important; }
     footer { visibility: hidden; }
 
-    /* Título Neón Rojo */
+    /* Título Neón Rojo Roto */
     @keyframes flicker {
         0%, 18%, 22%, 25%, 53%, 57%, 100% { text-shadow: 0 0 4px #f00, 0 0 11px #f00, 0 0 19px #f00, 0 0 40px #f00; color: #ff4b4b; }
         20%, 24%, 55% { text-shadow: none; color: #330000; }
@@ -39,7 +39,7 @@ st.markdown("""
     .ruth-header { text-align: center; padding-top: 1rem; color: #ff4b4b; font-size: 5rem; animation: flicker 3s infinite alternate; font-weight: 100; letter-spacing: 1.2rem; }
     .ruth-subtitle { text-align: center; color: #888; font-size: 0.8rem; letter-spacing: 0.3rem; margin-top: -10px; margin-bottom: 3rem; font-weight: bold;}
     
-    /* BOTONES GHOST (INCLUIDO PDF) */
+    /* BOTONES GHOST MINIMALISTAS */
     [data-testid="column"] { padding: 0px 1px !important; }
     .stButton>button {
         border: none !important;
@@ -58,7 +58,7 @@ st.markdown("""
         0%, 100% { color: #ff4b4b; text-shadow: 0 0 8px #ff0000; opacity: 1; }
         50% { color: #660000; text-shadow: none; opacity: 0.8; }
     }
-    .stButton>button:hover { animation: text-flicker 0.4s infinite; background-color: transparent !important; }
+    .stButton>button:hover { animation: text-flicker 0.4s infinite; }
     div[data-testid="stMarkdownContainer"] p { color: #e0e0e0 !important; }
     </style>
     <div class="ruth-header">R U T H</div>
@@ -78,12 +78,12 @@ ESPECIALIDADES = {
 }
 
 TONOS = {
-    "Sarcástica": "Tono cínico, mordaz e inteligente. Te burlas sutilmente y eres cortante.",
-    "Empática": "Tono suave, paciente y enfocado en el apoyo emocional incondicional.",
-    "Analítica": "Tono puramente lógico, frío, basado solo en datos y hechos crudos.",
-    "Motivadora": "Tono enérgico, inspirador y agresivamente positivo hacia el éxito.",
-    "Ejecutiva": "Tono sobrio, breve y enfocado exclusivamente en el ROI.",
-    "Conspiranoica": "Tono suspicaz, buscas patrones de control ocultos en todo."
+    "Sarcástica": "Tono cínico, mordaz e inteligente.",
+    "Empática": "Tono suave, paciente y empático.",
+    "Analítica": "Tono puramente lógico y frío.",
+    "Motivadora": "Tono enérgico e inspirador.",
+    "Ejecutiva": "Tono sobrio y directo al grano.",
+    "Conspiranoica": "Tono suspicaz y detectivesco."
 }
 
 # --- 3. CONEXIONES ---
@@ -106,12 +106,14 @@ def generar_pdf_bytes(mensajes, esp):
 
 def guardar_nube(mensajes):
     if mensajes:
-        try: supabase.table("chats").insert({"user_email": "Invitado", "messages": mensajes}).execute()
-    except: pass
+        try:
+            supabase.table("chats").insert({"user_email": "Invitado", "messages": mensajes}).execute()
+        except Exception:
+            pass
 
 if "messages" not in st.session_state: st.session_state.messages = []
 
-# --- 4. BARRA LATERAL ---
+# --- 4. BARRA LATERAL (WORKSPACE) ---
 with st.sidebar:
     st.markdown("<h2 style='color: white; font-weight: 200;'>WORKSPACE</h2>", unsafe_allow_html=True)
     if st.button("＋ NUEVA CONVERSACIÓN"):
@@ -124,12 +126,13 @@ with st.sidebar:
     personalidad = st.selectbox("Personalidad:", list(TONOS.keys()))
     
     # Botón PDF Minimalista Ghost
-    st.divider()
     if st.session_state.messages:
+        st.divider()
         try:
             pdf_data = generar_pdf_bytes(st.session_state.messages, especialidad)
             st.download_button(label="📥 EXPORTAR PDF", data=pdf_data, file_name="RUTH_Reporte.pdf", mime="application/pdf")
-        except: st.caption("PDF Ready")
+        except Exception:
+            pass
 
     st.divider()
     st.markdown("<p style='color: #888; font-size: 0.7rem;'>HISTORIAL CLOUD</p>", unsafe_allow_html=True)
@@ -139,12 +142,12 @@ with st.sidebar:
             m_u = chat['messages'][0]['content'][:20].upper()+"..." if chat['messages'] else "Vacío"
             if st.button(f"{m_u}", key=chat['id']):
                 st.session_state.messages = chat['messages']; st.rerun()
-    except: pass
+    except Exception:
+        pass
 
 # --- 5. LOGICA DE IA (ACTITUD EN TIEMPO REAL) ---
 def enviar_c(t):
-    # Forzamos la personalidad en el prompt de sistema justo antes de enviar
-    system_inst = f"Identidad TOTAL: {ESPECIALIDADES[especialidad]} Tono ABSOLUTO: {TONOS[personalidad]} PROHIBIDO disculparte. Actúa así ahora mismo."
+    system_inst = f"Identidad TOTAL: {ESPECIALIDADES[especialidad]} Tono ABSOLUTO: {TONOS[personalidad]} Responde ahora mismo."
     st.session_state.messages.append({"role": "user", "content": t})
     c = client.chat.completions.create(messages=[{"role":"system","content": system_inst}] + st.session_state.messages, model="llama-3.3-70b-versatile")
     st.session_state.messages.append({"role": "assistant", "content": c.choices[0].message.content})
@@ -152,7 +155,7 @@ def enviar_c(t):
 cols = st.columns(8); labels = list(ESPECIALIDADES.keys())
 for i in range(8):
     with cols[i]:
-        if st.button(labels[i].upper()): enviar_c(f"Comando: {labels[i]}"); st.rerun()
+        if st.button(labels[i].upper()): enviar_c(f"Ejecuta: {labels[i]}"); st.rerun()
 
 st.divider()
 
@@ -163,12 +166,11 @@ for msg in st.session_state.messages:
         with st.chat_message(msg["role"], avatar=av):
             st.markdown(msg["content"])
 
-if prompt := st.chat_input(f"RUTH {especialidad} ({personalidad})"):
+if prompt := st.chat_input(f"RUTH {especialidad}"):
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"): st.markdown(prompt)
     with st.chat_message("assistant", avatar=ruth_avatar):
-        # Inyección de actitud forzada en cada mensaje
-        system_inst = f"Identidad RUTH: {ESPECIALIDADES[especialidad]} Tono: {TONOS[personalidad]} PROHIBIDO disculparte. Sé radicalmente fiel a tu nueva personalidad."
+        system_inst = f"Identidad RUTH: {ESPECIALIDADES[especialidad]} Tono: {TONOS[personalidad]} PROHIBIDO disculparte."
         c = client.chat.completions.create(messages=[{"role":"system","content": system_inst}] + st.session_state.messages, model="llama-3.3-70b-versatile")
         res = c.choices[0].message.content
         st.markdown(res)
