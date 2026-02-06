@@ -4,7 +4,7 @@ from supabase import create_client, Client
 import os
 import datetime
 
-# --- 1. CONFIGURACIÓN VISUAL PREMIUM Y TÍTULO NEÓN ROJO ---
+# --- 1. CONFIGURACIÓN VISUAL PREMIUM Y TÍTULO NEÓN ---
 st.set_page_config(
     page_title="RUTH Professional", 
     page_icon="●", 
@@ -23,22 +23,22 @@ st.markdown("""
     
     header, footer, .viewerBadge_container__1QS1n { visibility: hidden; }
 
-    /* EFECTO NEÓN ROJO ROTO */
+    /* EFECTO NEÓN ROTO PARA EL TÍTULO GIGANTE */
     @keyframes flicker {
         0%, 18%, 22%, 25%, 53%, 57%, 100% {
             text-shadow: 
-                0 0 4px #ff0000,
-                0 0 11px #ff0000,
-                0 0 19px #ff0000,
-                0 0 40px #ff4b4b,
-                0 0 80px #ff4b4b,
-                0 0 90px #ff4b4b,
-                0 0 100px #ff4b4b;
-            color: #ff4b4b;
+                0 0 7px #fff,
+                0 0 10px #fff,
+                0 0 21px #fff,
+                0 0 42px #ff4b4b,
+                0 0 82px #ff4b4b,
+                0 0 92px #ff4b4b,
+                0 0 102px #ff4b4b;
+            color: #fff;
         }
         20%, 24%, 55% {        
             text-shadow: none;
-            color: #330000; 
+            color: #441111; /* Color apagado */
         }
     }
 
@@ -47,8 +47,8 @@ st.markdown("""
         padding-top: 2rem;
         letter-spacing: 1.5rem;
         font-weight: 100;
-        color: #ff4b4b;
-        font-size: 6rem; 
+        color: #ffffff;
+        font-size: 6rem; /* Gigante */
         animation: flicker 3s infinite alternate;
         margin-bottom: 0px;
     }
@@ -89,7 +89,7 @@ supabase = create_client(st.secrets["SUPABASE_URL"], st.secrets["SUPABASE_KEY"])
 icon_path = "logo_ruth.png"
 ruth_avatar = icon_path if os.path.exists(icon_path) else "●"
 
-# --- 3. EXPERTOS ---
+# --- 3. DICCIONARIO DE EXPERTOS ---
 EXPERTOS = {
     "Abogada": "Actúas como una Abogada Senior de Élite. PROHIBIDO disculparte. Responde directamente con rigor legal.",
     "Amazon Pro": "Actúas como una Especialista en Amazon FBA. PROHIBIDO disculparte. Ve directo al grano con SEO y ventas.",
@@ -128,7 +128,7 @@ with st.sidebar:
             st.session_state.messages = chat['messages']
             st.rerun()
 
-# --- 6. PROCESAMIENTO ---
+# --- 6. INTERFAZ Y PROCESAMIENTO ---
 def procesar_prompt(texto, modo_ia):
     st.session_state.messages.append({"role": "user", "content": texto})
     instruccion = EXPERTOS[modo_ia]
@@ -147,7 +147,7 @@ with col1:
 with col2:
     if st.button("⚖️ Análisis"): procesar_prompt(f"Haz un análisis experto sobre...", modo); st.rerun()
 with col3:
-    if st.button("📦 Optimización"): procesar_prompt(f"Como experta en Amazon, optimiza...", modo); st.rerun()
+    if st.button("📦 Amazon"): procesar_prompt(f"Como experta en Amazon, optimiza...", modo); st.rerun()
 with col4:
     if st.button("💡 Estrategia"): procesar_prompt(f"Propón una idea de negocio desde tu visión de {modo}...", modo); st.rerun()
 
