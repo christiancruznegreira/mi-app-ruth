@@ -4,60 +4,48 @@ from supabase import create_client, Client
 import os
 import datetime
 
-# --- 1. ESTÉTICA PREMIUM Y CONFIGURACIÓN ---
+# --- 1. CONFIGURACIÓN Y ESTÉTICA FIJA ---
 st.set_page_config(
     page_title="RUTH Professional", 
     page_icon="●", 
     layout="wide", 
-    initial_sidebar_state="expanded" # Fuerza a que la barra lateral aparezca abierta
+    initial_sidebar_state="expanded" 
 )
 
 st.markdown("""
     <style>
-    /* Fondo con Patrón Unificado para Principal y Sidebar */
+    /* Fondo con Patrón Unificado */
     [data-testid="stAppViewContainer"], [data-testid="stSidebar"], .stSidebarContent {
         background-color: #0e1117 !important;
         background-image: radial-gradient(#1a1d24 1px, transparent 1px) !important;
         background-size: 30px 30px !important;
     }
-    
-    header, footer { visibility: hidden; }
 
-    /* EFECTO NEÓN ROJO ROTO PARA EL TÍTULO GIGANTE */
+    /* BARRA LATERAL FIJA: Ocultar flecha de colapsar y Header superior */
+    [data-testid="stSidebarCollapsedControl"], [data-testid="stHeader"] {
+        display: none !important;
+    }
+
+    /* Ajuste de espaciado tras quitar el header */
+    .main .block-container {
+        padding-top: 2rem !important;
+    }
+
+    /* EFECTO NEÓN ROJO ROTO */
     @keyframes flicker {
         0%, 18%, 22%, 25%, 53%, 57%, 100% {
-            text-shadow: 
-                0 0 4px #f00, 0 0 11px #f00, 0 0 19px #f00, 
-                0 0 40px #f00, 0 0 80px #f00, 0 0 100px #f00;
+            text-shadow: 0 0 4px #f00, 0 0 11px #f00, 0 0 19px #f00, 0 0 40px #f00, 0 0 80px #f00;
             color: #ff4b4b;
         }
-        20%, 24%, 55% {        
-            text-shadow: none;
-            color: #330000; 
-        }
+        20%, 24%, 55% { text-shadow: none; color: #330000; }
     }
+    .ruth-header { 
+        text-align: center; color: #ff4b4b; font-size: 6rem; 
+        animation: flicker 3s infinite alternate; font-weight: 100; letter-spacing: 1.5rem; 
+    }
+    .ruth-subtitle { text-align: center; color: #888; font-size: 0.8rem; letter-spacing: 0.3rem; margin-top: -15px; margin-bottom: 2rem;}
 
-    .ruth-header {
-        text-align: center;
-        padding-top: 1rem;
-        letter-spacing: 1.5rem;
-        font-weight: 100;
-        color: #ff4b4b;
-        font-size: 6rem; 
-        animation: flicker 3s infinite alternate;
-        margin-bottom: 0px;
-    }
-    
-    .ruth-subtitle {
-        text-align: center;
-        color: #888;
-        font-size: 0.8rem;
-        letter-spacing: 0.4rem;
-        margin-top: -15px;
-        margin-bottom: 3rem;
-    }
-
-    /* Botones con Brillo Rojo (Glow) */
+    /* Botones con Brillo */
     .stButton>button {
         border-radius: 12px !important;
         border: 1px solid #ff4b4b !important;
@@ -78,23 +66,23 @@ st.markdown("""
     <div class="ruth-subtitle">UNIVERSAL BUSINESS SUITE</div>
 """, unsafe_allow_html=True)
 
-# --- 2. CONEXIÓN SEGURA (GROQ Y SUPABASE) ---
+# --- 2. CONEXIÓN (GROQ Y SUPABASE) ---
 try:
     client = Groq(api_key=st.secrets["GROQ_API_KEY"].strip())
     supabase = create_client(st.secrets["SUPABASE_URL"], st.secrets["SUPABASE_KEY"])
 except Exception as e:
-    st.error("Error en Secrets: Revisa GROQ_API_KEY, SUPABASE_URL y SUPABASE_KEY.")
+    st.error("Error técnico en Secrets. Revisa tus llaves API.")
     st.stop()
 
 # --- 3. DICCIONARIO DE EXPERTOS ---
 EXPERTOS = {
-    "Abogada": "Eres RUTH Abogada Senior. Responde directo, con rigor legal y sin disculparte por el cambio de modo.",
-    "Amazon Pro": "Eres RUTH Especialista en Amazon. SEO, ventas y algoritmo A9. Ve al grano.",
-    "Marketing": "Eres RUTH Directora de Marketing. Persuasión y psicología de ventas. Sin disculpas.",
-    "Estratega": "Eres RUTH CEO Advisor. Estrategia de negocios y escalabilidad ejecutiva."
+    "Abogada": "Eres RUTH Abogada Senior. Rigor legal, tono formal y sin disculpas.",
+    "Amazon Pro": "Eres RUTH Especialista Amazon FBA. SEO y ventas. Directa.",
+    "Marketing": "Eres RUTH Directora Marketing. Persuasiva y creativa.",
+    "Estratega": "Eres RUTH CEO Advisor. Estrategia y escalabilidad."
 }
 
-# --- 4. FUNCIONES DE BASE DE DATOS ---
+# --- 4. FUNCIONES DE NUBE ---
 def guardar_nube(mensajes):
     try: supabase.table("chats").insert({"user_email": "Invitado", "messages": mensajes}).execute()
     except: pass
@@ -107,9 +95,9 @@ def cargar_nube():
 
 if "messages" not in st.session_state: st.session_state.messages = []
 
-# --- 5. PANEL LATERAL (CENTRO DE MANDO) ---
+# --- 5. PANEL LATERAL FIJO (CENTRO DE MANDO) ---
 with st.sidebar:
-    st.markdown("<h2 style='color: white; font-weight: 200;'>COMMAND CENTER</h2>", unsafe_allow_html=True)
+    st.markdown("<h2 style='color: white; font-weight: 200; margin-top: -20px;'>COMMAND CENTER</h2>", unsafe_allow_html=True)
     
     if st.button("＋ NUEVA CONVERSACIÓN"):
         if st.session_state.messages: guardar_nube(st.session_state.messages)
@@ -120,7 +108,7 @@ with st.sidebar:
     modo = st.selectbox("Especialidad de RUTH:", list(EXPERTOS.keys()))
     
     st.divider()
-    st.markdown("<p style='color: #888;'>HISTORIAL CLOUD</p>", unsafe_allow_html=True)
+    st.markdown("<p style='color: #888; font-size: 0.8rem;'>HISTORIAL CLOUD</p>", unsafe_allow_html=True)
     historial = cargar_nube()
     for chat in historial:
         fecha = chat['created_at'][11:16]
@@ -128,7 +116,7 @@ with st.sidebar:
             st.session_state.messages = chat['messages']
             st.rerun()
 
-# --- 6. PROCESAMIENTO Y BOTONES RÁPIDOS ---
+# --- 6. PROCESAMIENTO Y CUERPO ---
 def enviar_p(t):
     st.session_state.messages.append({"role": "user", "content": t})
     c = client.chat.completions.create(
@@ -137,16 +125,16 @@ def enviar_p(t):
     )
     st.session_state.messages.append({"role": "assistant", "content": c.choices[0].message.content})
 
-# Botones de la interfaz principal
+# Botones rápidos superiores
 col1, col2, col3, col4 = st.columns(4)
 with col1: 
-    if st.button("📝 Email"): enviar_p(f"Como {modo}, redacta un correo profesional."); st.rerun()
+    if st.button("📝 Email"): enviar_p(f"Redacta un correo profesional como {modo}."); st.rerun()
 with col2: 
-    if st.button("⚖️ Análisis"): enviar_p(f"Haz un análisis experto como {modo}."); st.rerun()
+    if st.button("⚖️ Análisis"): enviar_p(f"Análisis experto como {modo}."); st.rerun()
 with col3: 
-    if st.button("📦 Amazon"): enviar_p(f"Optimiza este caso como experta en Amazon."); st.rerun()
+    if st.button("📦 Amazon"): enviar_p(f"Optimización SEO como Amazon Pro."); st.rerun()
 with col4: 
-    if st.button("💡 Estrategia"): enviar_p(f"Propón una idea disruptiva como {modo}."); st.rerun()
+    if st.button("💡 Estrategia"): enviar_p(f"Estrategia disruptiva como {modo}."); st.rerun()
 
 st.divider()
 
@@ -159,7 +147,7 @@ for msg in st.session_state.messages:
     with st.chat_message(msg["role"], avatar=av):
         st.markdown(msg["content"])
 
-if prompt := st.chat_input(f"Hablando con RUTH {modo}..."):
+if prompt := st.chat_input(f"Consultando a RUTH {modo}..."):
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
         st.markdown(prompt)
