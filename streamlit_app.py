@@ -24,7 +24,7 @@ st.markdown("""
     }
     .ruth-header { text-align: center; padding-top: 1rem; color: #ff4b4b; font-size: 5.5rem; animation: flicker 3s infinite alternate; font-weight: 100; letter-spacing: 1.5rem; margin-bottom: 0px;}
     .ruth-subtitle { text-align: center; color: #888; font-size: 0.8rem; letter-spacing: 0.3rem; margin-top: -10px; margin-bottom: 3rem;}
-    .stButton>button { border-radius: 12px !important; border: 1px solid #ff4b4b !important; background-color: rgba(255, 75, 75, 0.05) !important; color: white !important; width: 100%; transition: 0.3s; }
+    .stButton>button { border-radius: 12px !important; border: 1px solid #ff4b4b !important; background-color: rgba(255, 75, 75, 0.05) !important; color: white !important; width: 100%; transition: 0.3s; font-size: 0.8rem !important; }
     .stButton>button:hover { background-color: #ff4b4b !important; box-shadow: 0px 0px 20px rgba(255, 75, 75, 0.6) !important; }
     div[data-testid="stMarkdownContainer"] p { color: #e0e0e0 !important; }
     </style>
@@ -32,13 +32,14 @@ st.markdown("""
     <div class="ruth-subtitle">UNIVERSAL BUSINESS SUITE</div>
 """, unsafe_allow_html=True)
 
-# --- 2. PERSONALIDADES (Añadido Médico) ---
+# --- 2. PERSONALIDADES (Añadido Anime) ---
 PERSONALIDADES = {
-    "Abogada": "Eres RUTH Legal Advisor. Tono formal, frío y técnico. Sin disculpas.",
-    "Amazon Pro": "Eres RUTH Amazon Strategist. SEO, ventas y rentabilidad. Directa.",
-    "Marketing": "Eres RUTH Copywriter. Tono magnético, persuasivo y creativo.",
-    "Estratega": "Eres RUTH CEO Advisor. Escalabilidad y visión ejecutiva.",
-    "Médico": "Eres RUTH Medical Specialist. Tu tono es empático, riguroso y científico. Basas tus respuestas en evidencia médica. Aclara siempre que eres una IA de soporte y no sustituyes al médico real."
+    "Abogada": "Eres RUTH Legal Advisor. Rigurosa y técnica.",
+    "Amazon Pro": "Eres RUTH Amazon Strategist. Comercial y directa.",
+    "Marketing": "Eres RUTH Copywriter. Persuasiva y creativa.",
+    "Estratega": "Eres RUTH CEO Advisor. Ejecutiva y fría.",
+    "Médico": "Eres RUTH Medical Specialist. Empática y científica.",
+    "Anime": "Eres RUTH Otaku Sensei. Experta en anime, manga y cultura japonesa. Tu tono es entusiasta, usas términos como 'nakama', 'shonen' o 'seinen' con propiedad y das recomendaciones profundas basadas en la trama y el estudio de animación."
 }
 
 # --- 3. CONEXIONES ---
@@ -68,7 +69,7 @@ with st.sidebar:
         st.session_state.messages = []
         st.rerun()
     st.divider()
-    modo = st.selectbox("Identidad:", list(PERSONALIDADES.keys()))
+    modo = st.selectbox("Identidad Activa:", list(PERSONALIDADES.keys()))
     st.divider()
     st.markdown("<p style='color: #888;'>HISTORIAL CLOUD</p>", unsafe_allow_html=True)
     historial = cargar_nube()
@@ -77,24 +78,28 @@ with st.sidebar:
             st.session_state.messages = chat['messages']
             st.rerun()
 
-# --- 5. CUERPO PRINCIPAL (BOTONES ACTUALIZADOS) ---
+# --- 5. CUERPO PRINCIPAL (BOTONES PARA 6 ESPECIALISTAS) ---
 def enviar_c(t):
     st.session_state.messages.append({"role": "user", "content": t})
     c = client.chat.completions.create(messages=[{"role":"system","content": PERSONALIDADES[modo]}] + st.session_state.messages, model="llama-3.3-70b-versatile")
     st.session_state.messages.append({"role": "assistant", "content": c.choices[0].message.content})
 
-# Botones adaptados según el modo médico
-col1, col2, col3, col4, col5 = st.columns(5) # Añadimos una columna más
-with col1: 
-    if st.button("📝 Email"): enviar_c("Redacta un correo profesional."); st.rerun()
-with col2: 
-    if st.button("⚖️ Análisis"): enviar_c("Realiza un análisis experto."); st.rerun()
-with col3: 
-    if st.button("📦 Amazon"): enviar_c("Optimiza SEO Amazon."); st.rerun()
-with col4: 
-    if st.button("💡 Estrategia"): enviar_c("Propón una idea disruptiva."); st.rerun()
-with col5: 
-    if st.button("🩺 Salud"): enviar_c("Realiza un resumen clínico o explica un término médico de forma profesional."); st.rerun()
+# Ajustamos a 6 columnas para que queden todos los botones en línea
+cols = st.columns(6)
+opciones = [
+    ("📝 Email", "Redacta un correo profesional."),
+    ("⚖️ Análisis", "Realiza un análisis experto."),
+    ("📦 Amazon", "Optimiza SEO Amazon."),
+    ("💡 Idea", "Propón una idea disruptiva."),
+    ("🩺 Salud", "Explica un tema médico técnico."),
+    ("⛩️ Anime", "Dame una recomendación épica de anime según mis gustos.")
+]
+
+for i, (label, prompt_t) in enumerate(opciones):
+    with cols[i]:
+        if st.button(label):
+            enviar_c(prompt_t)
+            st.rerun()
 
 st.divider()
 
