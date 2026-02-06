@@ -10,14 +10,14 @@ st.set_page_config(page_title="RUTH Pro", page_icon="●", layout="wide", initia
 
 st.markdown("""
     <style>
-    /* Fondo con Patrón Unificado */
+    /* Fondo Unificado */
     [data-testid="stAppViewContainer"], [data-testid="stSidebar"], .stSidebarContent {
         background-color: #0e1117 !important;
         background-image: radial-gradient(#1a1d24 1px, transparent 1px) !important;
         background-size: 30px 30px !important;
     }
 
-    /* FLECHA DE RESCATE: Visible y Roja si la barra se cierra */
+    /* FLECHA DE RESCATE: Pestaña roja arriba a la izquierda */
     [data-testid="stSidebarCollapsedControl"] {
         background-color: #ff4b4b !important;
         color: white !important;
@@ -27,10 +27,8 @@ st.markdown("""
         padding: 5px;
     }
 
-    /* Ocultar elementos de Streamlit sin romper la flecha */
     [data-testid="stHeader"] { background: rgba(0,0,0,0) !important; }
     footer { visibility: hidden; }
-    .viewerBadge_container__1QS1n { display: none; }
 
     /* EFECTO NEÓN ROJO ROTO */
     @keyframes flicker {
@@ -43,7 +41,7 @@ st.markdown("""
     .ruth-header { text-align: center; padding-top: 1rem; color: #ff4b4b; font-size: 5rem; animation: flicker 3s infinite alternate; font-weight: 100; letter-spacing: 1.2rem; }
     .ruth-subtitle { text-align: center; color: #888; font-size: 0.8rem; letter-spacing: 0.3rem; margin-top: -15px; margin-bottom: 3rem; font-weight: bold;}
     
-    /* BOTONES GHOST MINIMALISTAS */
+    /* BOTONES GHOST */
     [data-testid="column"] { padding: 0px 1px !important; text-align: center !important; }
     .stButton>button {
         border: none !important;
@@ -72,6 +70,7 @@ st.markdown("""
 
 # --- 2. DICCIONARIOS DE INTELIGENCIA CRUZADA ---
 ESPECIALIDADES = {
+    "Psicóloga": "como Psicóloga Clínica experta en análisis de patrones de conducta y datos reales.",
     "Abogada": "como experta en Derecho y Consultoría Legal.",
     "Amazon Pro": "como Especialista en Amazon FBA y algoritmos.",
     "Marketing": "como Directora de Marketing y Copywriter Pro.",
@@ -83,6 +82,7 @@ ESPECIALIDADES = {
 }
 
 TONOS = {
+    "Conspiranoica": "Tu tono es suspicaz, cuestionas todo y buscas 'la verdad oculta' detrás de cada dato. Crees que nada es casualidad y que hay estructuras de poder vigilando.",
     "Analítica": "Tu tono es basado en datos, frío, preciso y lógico.",
     "Motivadora": "Tu tono es inspirador, lleno de energía y optimismo.",
     "Sarcástica": "Tu tono es irónico, brillante pero mordaz.",
@@ -98,7 +98,7 @@ ruth_avatar = icon_path if os.path.exists(icon_path) else "●"
 
 if "messages" not in st.session_state: st.session_state.messages = []
 
-# --- 4. BARRA LATERAL (DOBLE SELECTOR) ---
+# --- 4. BARRA LATERAL ---
 with st.sidebar:
     st.markdown("<h2 style='color: white; font-weight: 200;'>WORKSPACE</h2>", unsafe_allow_html=True)
     if st.button("＋ NUEVA CONVERSACIÓN"):
@@ -112,7 +112,7 @@ with st.sidebar:
     try:
         res = supabase.table("chats").select("*").eq("user_email", "Invitado").order("created_at", desc=True).limit(5).execute()
         for chat in res.data:
-            msg_t = "Vacío"
+            msg_t = "Sin contenido"
             for m in chat['messages']:
                 if m['role']=='user': 
                     msg_t = m['content'][:20].upper() + "..."
@@ -122,14 +122,11 @@ with st.sidebar:
                 st.rerun()
     except: pass
 
-# --- 5. LÓGICA DE BOTONES ---
+# --- 5. LÓGICA DE PROCESAMIENTO ---
 def enviar_c(etiqueta):
-    prompt_final = f"Actúa {ESPECIALIDADES[especialidad]} {TONOS[personalidad]} Orden: {etiqueta}"
-    st.session_state.messages.append({"role": "user", "content": prompt_final})
-    c = client.chat.completions.create(
-        messages=[{"role":"system","content": f"Eres RUTH {ESPECIALIDADES[especialidad]} {TONOS[personalidad]}"}] + st.session_state.messages,
-        model="llama-3.3-70b-versatile"
-    )
+    system_inst = f"Eres RUTH. Actúas {ESPECIALIDADES[especialidad]} {TONOS[personalidad]}"
+    st.session_state.messages.append({"role": "user", "content": f"Ejecuta: {etiqueta}"})
+    c = client.chat.completions.create(messages=[{"role":"system","content": system_inst}] + st.session_state.messages, model="llama-3.3-70b-versatile")
     st.session_state.messages.append({"role": "assistant", "content": c.choices[0].message.content})
 
 cols = st.columns(8)
@@ -140,14 +137,13 @@ for i in range(8):
 
 st.divider()
 
-# --- 6. CHAT ---
 for msg in st.session_state.messages:
-    if "Actúa como" not in msg["content"]:
+    if "Eres RUTH" not in msg["content"] and "Ejecuta:" not in msg["content"]:
         av = ruth_avatar if msg["role"] == "assistant" else None
         with st.chat_message(msg["role"], avatar=av):
             st.markdown(msg["content"])
 
-if prompt := st.chat_input(f"Hablando con RUTH {especialidad} ({personalidad})..."):
+if prompt := st.chat_input(f"Consultando a RUTH {especialidad} ({personalidad})..."):
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"): st.markdown(prompt)
     with st.chat_message("assistant", avatar=ruth_avatar):
