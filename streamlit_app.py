@@ -4,80 +4,82 @@ import os
 import urllib.parse
 import random
 
-# 1. Configuración de página
+# 1. ESTÉTICA PREMIUM (NEGRA CON PUNTOS)
 st.set_page_config(page_title="RUTH", page_icon="●")
+st.markdown("""
+    <style>
+    [data-testid="stAppViewContainer"] {
+        background-color: #0e1117;
+        background-image: radial-gradient(#1a1d24 1px, transparent 1px);
+        background-size: 30px 30px;
+    }
+    #MainMenu, footer, header, .viewerBadge_container__1QS1n {visibility: hidden; display: none;}
+    .ruth-header {text-align: center; padding-top: 2rem; letter-spacing: 0.8rem; font-weight: 200; color: #ffffff; font-size: 3rem;}
+    div[data-testid="stMarkdownContainer"] p {color: #e0e0e0 !important;}
+    </style>
+    <div class="ruth-header">R U T H</div>
+""", unsafe_allow_html=True)
 
-# 2. Título y Botón de Reinicio en la barra lateral
-st.markdown("<h1 style='text-align: center; font-weight: 200;'>R U T H</h1>", unsafe_allow_html=True)
-
+# 2. BARRA LATERAL
 with st.sidebar:
-    if st.button("Reiniciar Conversación"):
+    if st.button("Reiniciar Sistema"):
         st.session_state.messages = []
         st.rerun()
 
-# 3. Configuración del Logo
+# 3. CONEXIÓN
+client = Groq(api_key=st.secrets["GROQ_API_KEY"].strip())
 icon_path = "logo_ruth.png"
 ruth_avatar = icon_path if os.path.exists(icon_path) else "●"
 
-# 4. Conexión de seguridad
-if "GROQ_API_KEY" not in st.secrets:
-    st.error("Falta la llave API.")
-    st.stop()
-
-client = Groq(api_key=st.secrets["GROQ_API_KEY"].strip())
-
-# --- 5. MEMORIA Y REGLAS DE RUTH (REFORZADAS) ---
+# 4. MEMORIA REPROGRAMADA
 if "messages" not in st.session_state or len(st.session_state.messages) == 0:
     st.session_state.messages = [
         {
             "role": "system", 
-            "content": (
-                "Tu nombre es RUTH. ERE OBLIGATORIO que sigas estas reglas: "
-                "1. Eres capaz de generar imágenes. Si te piden una, NO digas que no puedes. "
-                "2. Para generar imágenes, escribe ÚNICAMENTE: 'GENERANDO_IMAGEN: [descripción en inglés]'. "
-                "3. No des explicaciones ni disculpas sobre ser un modelo de texto. "
-                "4. Si te piden una imagen de algo, simplemente genera el comando."
-            )
+            "content": "Eres RUTH. REGLA DE ORO: Si te piden una imagen, dibujo o foto, responde SOLAMENTE con la palabra 'DIBUJO:' y la descripción en inglés. Ejemplo: 'DIBUJO: a red car'. No digas nada más."
         }
     ]
-# Función para crear el enlace de la imagen
-def get_image_url(prompt_text):
-    prompt_encoded = urllib.parse.quote(prompt_text)
+
+# Función de imagen
+def mostrar_imagen(texto_ia):
+    prompt_puro = texto_ia.replace("DIBUJO:", "").strip()
+    prompt_enc = urllib.parse.quote(prompt_puro)
     seed = random.randint(1, 100000)
-    return f"https://image.pollinations.ai/prompt/{prompt_encoded}?width=1024&height=1024&seed={seed}&nologo=true"
+    url = f"https://image.pollinations.ai/prompt/{prompt_enc}?width=1024&height=1024&seed={seed}&nologo=true"
+    st.image(url, caption=f"RUTH Visual: {prompt_puro}", use_container_width=True)
 
-# 6. Mostrar el historial
-for message in st.session_state.messages:
-    if message["role"] != "system":
-        if "GENERANDO_IMAGEN:" in message["content"]:
-            prompt_img = message["content"].replace("GENERANDO_IMAGEN:", "").strip()
-            with st.chat_message("assistant", avatar=ruth_avatar):
-                st.image(get_image_url(prompt_img), caption=f"Imagen: {prompt_img}", use_container_width=True)
-        else:
-            av = ruth_avatar if message["role"] == "assistant" else None
-            with st.chat_message(message["role"], avatar=av):
-                st.markdown(message["content"])
+# 5. MOSTRAR CHAT
+for msg in st.session_state.messages:
+    if msg["role"] != "system":
+        with st.chat_message(msg["role"], avatar=(ruth_avatar if msg["role"]=="assistant" else None)):
+            if "DIBUJO:" in msg["content"]:
+                mostrar_imagen(msg["content"])
+            else:
+                st.markdown(msg["content"])
 
-# 7. Entrada de usuario
-if prompt := st.chat_input("Escribe aquí..."):
+# 6. INTERACCIÓN
+if prompt := st.chat_input("¿Qué ordenes tienes para RUTH?"):
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
         st.markdown(prompt)
 
     with st.chat_message("assistant", avatar=ruth_avatar):
         try:
-            completion = client.chat.completions.create(
+            # Forzamos a que piense que SÍ puede hacer imágenes
+            respuesta_ia = client.chat.completions.create(
                 messages=st.session_state.messages,
                 model="llama-3.3-70b-versatile",
-            )
-            response = completion.choices[0].message.content
+            ).choices[0].message.content
             
-            if "GENERANDO_IMAGEN:" in response:
-                prompt_img = response.replace("GENERANDO_IMAGEN:", "").strip()
-                st.image(get_image_url(prompt_img), use_container_width=True)
-            else:
-                st.markdown(response)
+            if "DIBUJO:" in respuesta_ia or "dibujo" in prompt.lower() or "imagen" in prompt.lower():
+                # Si la IA se resiste pero el usuario pidió imagen, forzamos el formato
+                if "DIBUJO:" not in respuesta_ia:
+                    respuesta_ia = f"DIBUJO: {prompt}"
                 
-            st.session_state.messages.append({"role": "assistant", "content": response})
+                mostrar_imagen(respuesta_ia)
+            else:
+                st.markdown(respuesta_ia)
+                
+            st.session_state.messages.append({"role": "assistant", "content": respuesta_ia})
         except Exception as e:
             st.error(f"Error: {e}")
