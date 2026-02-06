@@ -2,6 +2,7 @@ import streamlit as st
 from groq import Groq
 import os
 import urllib.parse
+import random # Añadimos esto para que cada imagen sea única
 
 # 1. Configuración básica
 st.set_page_config(page_title="RUTH", page_icon="●")
@@ -25,21 +26,24 @@ if "messages" not in st.session_state:
     st.session_state.messages = [
         {
             "role": "system", 
-            "content": "Eres RUTH, una asistente de IA elegante. HABILIDAD ESPECIAL: Si el usuario te pide una imagen o dibujo, DEBES responder ÚNICAMENTE con la palabra 'GENERANDO_IMAGEN:' seguido de una descripción corta y detallada en inglés de lo que el usuario quiere. Ejemplo: 'GENERANDO_IMAGEN: a minimalist landscape with mountains'."
+            "content": "Eres RUTH, una asistente de IA elegante. Si el usuario te pide una imagen, responde ÚNICAMENTE con 'GENERANDO_IMAGEN:' seguido de una descripción detallada en inglés."
         }
     ]
+
+# Función para crear el enlace de la imagen
+def get_image_url(prompt_text):
+    prompt_encoded = urllib.parse.quote(prompt_text)
+    seed = random.randint(1, 1000) # Esto ayuda a que la imagen cargue siempre
+    return f"https://image.pollinations.ai/prompt/{prompt_encoded}?width=1024&height=1024&seed={seed}&nologo=true"
 
 # 6. Mostrar el historial
 for message in st.session_state.messages:
     if message["role"] != "system":
-        # Si el mensaje contiene la instrucción de imagen, la mostramos
         if "GENERANDO_IMAGEN:" in message["content"]:
-            prompt_imagen = message["content"].replace("GENERANDO_IMAGEN:", "").strip()
+            prompt_img = message["content"].replace("GENERANDO_IMAGEN:", "").strip()
             with st.chat_message("assistant", avatar=ruth_avatar):
-                st.write(f"He creado esta imagen para ti sobre: *{prompt_imagen}*")
-                # Generador gratuito Pollinations
-                url_final = f"https://pollinations.ai/p/{urllib.parse.quote(prompt_imagen)}?width=1024&height=1024&seed=42&nologo=true"
-                st.image(url_final, use_container_width=True)
+                st.write(f"Interpretación visual de: *{prompt_img}*")
+                st.image(get_image_url(prompt_img), use_container_width=True)
         else:
             av = ruth_avatar if message["role"] == "assistant" else None
             with st.chat_message(message["role"], avatar=av):
@@ -59,12 +63,10 @@ if prompt := st.chat_input("¿Qué necesitas?"):
             )
             response = completion.choices[0].message.content
             
-            # Lógica para mostrar la imagen inmediatamente
             if "GENERANDO_IMAGEN:" in response:
-                prompt_imagen = response.replace("GENERANDO_IMAGEN:", "").strip()
-                st.write("Generando tu imagen personalizada...")
-                url_final = f"https://pollinations.ai/p/{urllib.parse.quote(prompt_imagen)}?width=1024&height=1024&seed=42&nologo=true"
-                st.image(url_final, use_container_width=True)
+                prompt_img = response.replace("GENERANDO_IMAGEN:", "").strip()
+                st.write("Generando...")
+                st.image(get_image_url(prompt_img), use_container_width=True)
             else:
                 st.markdown(response)
                 
