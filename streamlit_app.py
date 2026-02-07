@@ -11,13 +11,11 @@ st.set_page_config(page_title="RUTH Pro", page_icon="●", layout="wide", initia
 
 st.markdown("""
     <style>
-    /* Fondo Premium */
     [data-testid="stAppViewContainer"], [data-testid="stSidebar"], .stSidebarContent {
         background-color: #0e1117 !important;
         background-image: radial-gradient(#1a1d24 1px, transparent 1px) !important;
         background-size: 30px 30px !important;
     }
-    /* FLECHA DE RESCATE ROJA (MÁXIMA PRIORIDAD) */
     [data-testid="stSidebarCollapsedControl"] {
         background-color: #ff4b4b !important; color: white !important;
         border-radius: 0 10px 10px 0 !important; left: 0 !important;
@@ -33,7 +31,6 @@ st.markdown("""
     }
     .ruth-header { text-align: center; padding-top: 1rem; color: #ff4b4b; font-size: 5rem; animation: flicker 3s infinite alternate; font-weight: 100; letter-spacing: 1.2rem; }
     .ruth-subtitle { text-align: center; color: #888; font-size: 0.8rem; letter-spacing: 0.3rem; margin-top: -10px; margin-bottom: 3rem; font-weight: bold;}
-    
     .stButton>button { border: none !important; background-color: transparent !important; color: #aaaaaa !important; width: 100% !important; height: 40px !important; transition: 0.2s ease; text-transform: uppercase; font-size: 0.48rem !important; white-space: nowrap !important; cursor: pointer; }
     @keyframes text-flicker { 0%, 100% { color: #ff4b4b; text-shadow: 0 0 8px #ff0000; } 50% { color: #660000; text-shadow: none; } }
     .stButton>button:hover { animation: text-flicker 0.4s infinite; }
@@ -61,7 +58,7 @@ def extraer_pdf(archivos):
 if "messages" not in st.session_state: st.session_state.messages = []
 if "pdf_data" not in st.session_state: st.session_state.pdf_data = ""
 
-# --- 3. BARRA LATERAL (CONTROL CENTER) ---
+# --- 3. BARRA LATERAL ---
 with st.sidebar:
     st.markdown("<h2 style='color: white; font-weight: 200; font-size: 1.2rem;'>WORKSPACE</h2>", unsafe_allow_html=True)
     if st.button("NUEVA CONVERSACIÓN"):
@@ -73,14 +70,13 @@ with st.sidebar:
     st.divider()
     ESPECIALIDADES = {"Abogada": "Abogada.", "Amazon Pro": "Amazon.", "Marketing": "Marketing.", "Estratega": "CEO Advisor.", "Médico": "Médico.", "Finanzas": "Finanzas.", "IA Pro": "IA.", "Seguridad": "Seguridad."}
     TONOS = {"Analítica": "Lógica.", "Sarcástica": "Cínica.", "Empática": "Suave.", "Motivadora": "Éxito.", "Ejecutiva": "ROI.", "Conspiranoica": "Oculto."}
-    
     esp_act = st.selectbox("ESPECIALIDAD:", list(ESPECIALIDADES.keys()))
     ton_act = st.selectbox("PERSONALIDAD:", list(TONOS.keys()))
     
     st.divider()
     st.markdown("<p style='color: #ff4b4b; font-size: 0.7rem; font-weight: bold;'>CARGA DE MEDIOS</p>", unsafe_allow_html=True)
-    pdf_up = st.file_uploader("PDF TÉCNICO:", type=['pdf'], accept_multiple_files=True)
-    img_up = st.file_uploader("ANALIZAR FOTO:", type=['png', 'jpg', 'jpeg'])
+    pdf_up = st.file_uploader("PDF:", type=['pdf'], accept_multiple_files=True)
+    img_up = st.file_uploader("FOTO:", type=['png', 'jpg', 'jpeg'])
     
     if pdf_up:
         st.session_state.pdf_data = extraer_pdf(pdf_up)
@@ -94,9 +90,9 @@ with st.sidebar:
             if st.button(f"{tit}..."): st.session_state.messages = chat['messages']; st.rerun()
     except: pass
 
-# --- 4. LÓGICA DE BOTONES SUPERIORES ---
+# --- 4. LÓGICA DE IA ---
 def enviar_c(label):
-    st.session_state.messages.append({"role": "user", "content": f"Ejecuta análisis como {label}"})
+    st.session_state.messages.append({"role": "user", "content": f"Acción: {label}"})
     sys_i = f"Eres RUTH {ESPECIALIDADES[esp_act]} ({TONOS[ton_act]})."
     c = client.chat.completions.create(model="llama-3.3-70b-versatile", messages=[{"role":"system","content":sys_i}] + st.session_state.messages[-5:])
     st.session_state.messages.append({"role": "assistant", "content": c.choices[0].message.content}); st.rerun()
@@ -108,42 +104,29 @@ for i in range(8):
 
 st.divider()
 
-# --- 5. CHAT LOOP ---
 for msg in st.session_state.messages:
-    if "Ejecuta análisis" not in msg["content"]:
+    if "Acción:" not in msg["content"]:
         av = ruth_avatar if msg["role"] == "assistant" else None
         with st.chat_message(msg["role"], avatar=av): st.markdown(msg["content"])
 
-# --- 6. PROCESAMIENTO CON FALLBACK (VISIÓN BLINDADA) ---
 if prompt := st.chat_input(f"RUTH {esp_act}"):
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"): st.markdown(prompt)
-    
     with st.chat_message("assistant", avatar=ruth_avatar):
         contexto = f"\nDOC: {st.session_state.pdf_data[:3000]}" if st.session_state.pdf_data else ""
         sys_i = f"Eres RUTH {ESPECIALIDADES[esp_act]} {TONOS[ton_act]}. {contexto}"
-        
         try:
             if img_up:
-                b64_img = base64.b64encode(img_up.getvalue()).decode('utf-8')
-                # INTENTO 1: Modelo de producción estable
-                try:
-                    modelo_vision = "llama-3.2-11b-vision-instruct" 
-                    c = client.chat.completions.create(
-                        model=modelo_vision,
-                        messages=[{"role": "user", "content": [{"type": "text", "text": f"{sys_i}\n\n{prompt}"}, {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{b64_img}"}}]}]
-                    )
-                except:
-                    # FALLBACK: Modelo alternativo si el primero falla
-                    modelo_vision = "llava-v1.5-7b-4096-preview"
-                    c = client.chat.completions.create(
-                        model=modelo_vision,
-                        messages=[{"role": "user", "content": [{"type": "text", "text": f"{sys_i}\n\n{prompt}"}, {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{b64_img}"}}]}]
-                    )
+                b64 = base64.b64encode(img_up.getvalue()).decode('utf-8')
+                # USAMOS EL MODELO LAVA QUE ES MÁS ESTABLE PARA EVITAR EL 404
+                c = client.chat.completions.create(
+                    model="llava-v1.5-7b-4096-preview",
+                    messages=[{"role": "user", "content": [{"type": "text", "text": f"{sys_i}\n\n{prompt}"}, {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{b64}"}}]}]
+                )
             else:
                 c = client.chat.completions.create(model="llama-3.3-70b-versatile", messages=[{"role":"system","content":sys_i}] + st.session_state.messages[-5:])
             
             res = c.choices[0].message.content
             st.markdown(res); st.session_state.messages.append({"role": "assistant", "content": res})
         except Exception as e:
-            st.error(f"Error de conexión con la IA. Inténtalo de nuevo en unos segundos.")
+            st.error(f"Error de Groq: {e}")
