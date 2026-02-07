@@ -4,9 +4,8 @@ from supabase import create_client, Client
 from PyPDF2 import PdfReader
 import os
 import datetime
-import uuid
 
-# --- 1. ESTÉTICA PREMIUM (PARTÍCULAS Y NEÓN) ---
+# --- 1. ESTÉTICA PREMIUM (PARTÍCULAS, NEÓN Y FLECHA) ---
 st.set_page_config(page_title="RUTH Pro", page_icon="●", layout="wide", initial_sidebar_state="expanded")
 
 st.markdown("""
@@ -22,7 +21,7 @@ st.markdown("""
     }
     @keyframes drift { from { background-position: 0% 0%; } to { background-position: 5% 5%; } }
 
-    /* FLECHA DE RESCATE FIJA */
+    /* FLECHA DE RESCATE ROJA FIJA */
     [data-testid="stSidebarCollapsedControl"] {
         background-color: #ff4b4b !important; color: white !important;
         border-radius: 0 10px 10px 0 !important; left: 0 !important;
@@ -52,29 +51,11 @@ st.markdown("""
     <div class="ruth-subtitle">UNIVERSAL BUSINESS SUITE</div>
 """, unsafe_allow_html=True)
 
-# --- 2. INICIALIZACIÓN DE SESIÓN Y CONEXIONES ---
-if "messages" not in st.session_state: st.session_state.messages = []
-if "session_id" not in st.session_state: st.session_state.session_id = str(uuid.uuid4())
-if "pdf_data" not in st.session_state: st.session_state.pdf_data = ""
-
+# --- 2. CONEXIONES ---
 client = Groq(api_key=st.secrets["GROQ_API_KEY"].strip())
 supabase = create_client(st.secrets["SUPABASE_URL"], st.secrets["SUPABASE_KEY"])
 icon_path = "logo_ruth.png"
 ruth_avatar = icon_path if os.path.exists(icon_path) else "●"
-
-def guardar_progreso():
-    """Guarda o actualiza la conversación actual en Supabase."""
-    if len(st.session_state.messages) > 1:
-        try:
-            data = {
-                "user_email": "Invitado",
-                "messages": st.session_state.messages,
-                "session_id": st.session_state.session_id,
-                "updated_at": datetime.datetime.now().isoformat()
-            }
-            # Usamos upsert para que si el session_id ya existe, se actualice en lugar de crear uno nuevo
-            supabase.table("chats").upsert(data, on_conflict="session_id").execute()
-        except: pass
 
 def extraer_pdf(archivos):
     texto = ""
@@ -85,35 +66,32 @@ def extraer_pdf(archivos):
         except: pass
     return texto
 
-# --- 3. DICCIONARIOS ---
-ESPECIALIDADES = {
-    "Abogada": "como Abogada Senior de Élite.",
-    "Amazon Pro": "como Especialista en Amazon FBA.",
-    "Marketing": "como Directora de Marketing Pro.",
-    "Estratega": "como CEO Advisor Estratégico.",
-    "Médico": "como Médico Especialista.",
-    "Finanzas": "como Analista de Inversiones.",
-    "IA Pro": "como Arquitecto de IA.",
-    "Seguridad": "como Experto en Ciberseguridad."
-}
+def guardar_nube_manual(mensajes):
+    """Guarda el chat completo en Supabase antes de borrarlo."""
+    if len(mensajes) > 1:
+        try:
+            supabase.table("chats").insert({
+                "user_email": "Invitado",
+                "messages": mensajes
+            }).execute()
+            return True
+        except: return False
+    return True
 
-TONOS = {
-    "Analítica": "Tono lógico, frío y basado en datos.",
-    "Sarcástica": "Tono cínico, mordaz e inteligente.",
-    "Empática": "Tono suave, paciente y empático.",
-    "Motivadora": "Tono enérgico e inspirador.",
-    "Ejecutiva": "Tono sobrio y directo al ROI.",
-    "Conspiranoica": "Tono suspicaz y detectivesco."
-}
+if "messages" not in st.session_state: st.session_state.messages = []
+if "pdf_data" not in st.session_state: st.session_state.pdf_data = ""
 
-# --- 4. BARRA LATERAL (CONTROL CENTER) ---
+# --- 3. DICCIONARIOS DE INTELIGENCIA ---
+ESPECIALIDADES = {"Abogada": "Abogada Senior.", "Amazon Pro": "Amazon.", "Marketing": "Marketing.", "Estratega": "CEO.", "Médico": "Médico.", "Finanzas": "Finanzas.", "IA Pro": "IA.", "Seguridad": "Seguridad."}
+TONOS = {"Analítica": "Lógica.", "Sarcástica": "Cínica.", "Empática": "Suave.", "Motivadora": "Éxito.", "Ejecutiva": "ROI.", "Conspiranoica": "Oculto."}
+
+# --- 4. BARRA LATERAL ---
 with st.sidebar:
     st.markdown("<h2 style='color: white; font-weight: 200; font-size: 1.2rem;'>WORKSPACE</h2>", unsafe_allow_html=True)
     
     if st.button("NUEVA CONVERSACIÓN"):
-        guardar_progreso()
+        guardar_nube_manual(st.session_state.messages)
         st.session_state.messages = []
-        st.session_state.session_id = str(uuid.uuid4())
         st.session_state.pdf_data = ""
         st.rerun()
     
@@ -125,53 +103,51 @@ with st.sidebar:
     pdf_up = st.file_uploader("ASIMILAR PDF:", type=['pdf'], accept_multiple_files=True)
     if pdf_up:
         st.session_state.pdf_data = extraer_pdf(pdf_up)
-        st.caption("✅ Conocimiento asimilado.")
+        st.caption("✅ Conocimiento integrado.")
 
     st.divider()
-    st.markdown("<p style='color: #888; font-size: 0.7rem;'>HISTORIAL DE SESIONES</p>", unsafe_allow_html=True)
+    st.markdown("<p style='color: #888; font-size: 0.7rem;'>HISTORIAL CLOUD</p>", unsafe_allow_html=True)
     try:
-        res = supabase.table("chats").select("*").eq("user_email", "Invitado").order("updated_at", desc=True).limit(10).execute()
+        # Usamos created_at que es la columna que sí existe en tu foto
+        res = supabase.table("chats").select("*").eq("user_email", "Invitado").order("created_at", desc=True).limit(8).execute()
         for chat in res.data:
-            m_u = "NUEVA SESIÓN"
+            tit = "VACÍO"
             for m in chat['messages']:
-                if m['role'] == 'user': m_u = m['content'][:20].upper() + "..."; break
-            if st.button(f"{m_u}", key=chat['session_id']):
+                if m['role'] == 'user': tit = m['content'][:20].upper() + "..."; break
+            if st.button(f"{tit}", key=chat['id']):
                 st.session_state.messages = chat['messages']
-                st.session_state.session_id = chat['session_id']
                 st.rerun()
-    except: st.caption("Conectando con historial...")
+    except Exception as e:
+        st.caption("Historial temporalmente offline")
 
-# --- 5. LÓGICA DE IA (DINAMISMO REAL) ---
-def procesar_ia(prompt_usuario):
-    ctx_pdf = f"\nUSA ESTE DOC: {st.session_state.pdf_data[:3500]}" if st.session_state.pdf_data else ""
-    sys_inst = f"Identidad RUTH: {ESPECIALIDADES[esp_act]} Tono: {TONOS[ton_act]}. {ctx_pdf} PROHIBIDO disculparte por cambiar de modo."
+# --- 5. LÓGICA DE IA ---
+def procesar_ruth(prompt_usuario):
+    ctx_pdf = f"\nUSA ESTE TEXTO: {st.session_state.pdf_data[:3500]}" if st.session_state.pdf_data else ""
+    sys_inst = f"Eres RUTH {ESPECIALIDADES[esp_act]} con tono {TONOS[ton_act]}. {ctx_pdf} Olvida roles anteriores. Sé radical."
     
-    mensajes_finales = [{"role": "system", "content": sys_inst}] + st.session_state.messages[-10:]
-    
-    c = client.chat.completions.create(model="llama-3.3-70b-versatile", messages=mensajes_finales)
-    respuesta = c.choices[0].message.content
-    
-    st.session_state.messages.append({"role": "assistant", "content": respuesta})
-    guardar_progreso() # GUARDADO AUTOMÁTICO TRAS CADA RESPUESTA
+    c = client.chat.completions.create(
+        model="llama-3.3-70b-versatile",
+        messages=[{"role": "system", "content": sys_inst}] + st.session_state.messages[-8:]
+    )
+    res = c.choices[0].message.content
+    st.session_state.messages.append({"role": "assistant", "content": res})
     st.rerun()
 
-# Botones Ghost
 cols = st.columns(8); labels = list(ESPECIALIDADES.keys())
 for i in range(8):
     with cols[i]:
         if st.button(labels[i].upper()):
-            st.session_state.messages.append({"role": "user", "content": f"Ejecutar acción experta: {labels[i]}"})
-            procesar_ia(f"Acción {labels[i]}")
+            st.session_state.messages.append({"role": "user", "content": f"Acción experta: {labels[i]}"})
+            procesar_ruth(f"Acción {labels[i]}")
 
 st.divider()
 
-# --- 6. CHAT LOOP ---
 for msg in st.session_state.messages:
-    if "Ejecutar acción" not in msg["content"]:
+    if "Acción experta:" not in msg["content"]:
         av = ruth_avatar if msg["role"] == "assistant" else None
-        with st.chat_message(msg["role"], avatar=av):
-            st.markdown(msg["content"])
+        with st.chat_message(msg["role"], avatar=av): st.markdown(msg["content"])
 
 if prompt := st.chat_input(f"RUTH {esp_act}"):
     st.session_state.messages.append({"role": "user", "content": prompt})
-    procesar_ia(prompt)
+    with st.chat_message("user"): st.markdown(prompt)
+    procesar_ruth(prompt)
