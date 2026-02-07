@@ -2,10 +2,11 @@ import streamlit as st
 from groq import Groq
 from supabase import create_client, Client
 from PyPDF2 import PdfReader
+import base64 # Necesario para procesar imágenes
 import os
 import datetime
 
-# --- 1. ESTÉTICA PREMIUM (NEÓN Y PATRÓN) ---
+# --- 1. ESTÉTICA PREMIUM (SIN CAMBIOS) ---
 st.set_page_config(page_title="RUTH Pro", page_icon="●", layout="wide", initial_sidebar_state="expanded")
 
 st.markdown("""
@@ -35,49 +36,49 @@ st.markdown("""
     <div class="ruth-subtitle">UNIVERSAL BUSINESS SUITE</div>
 """, unsafe_allow_html=True)
 
-# --- 2. CONEXIONES ---
+# --- 2. CONEXIONES Y AYUDANTES ---
 client = Groq(api_key=st.secrets["GROQ_API_KEY"].strip())
 supabase = create_client(st.secrets["SUPABASE_URL"], st.secrets["SUPABASE_KEY"])
 icon_path = "logo_ruth.png"
 ruth_avatar = icon_path if os.path.exists(icon_path) else "●"
 
-# Función para leer PDF
-def leer_pdf(archivos):
+def extraer_pdf(archivos):
     texto = ""
     for a in archivos:
         try:
             r = PdfReader(a)
-            for p in r.pages:
-                texto += p.extract_text() + "\n"
+            for p in r.pages: texto += p.extract_text() + "\n"
         except: pass
     return texto
 
+def codificar_imagen(imagen):
+    return base64.b64encode(imagen.read()).decode('utf-8')
+
 # --- 3. DICCIONARIOS ---
-ESPECIALIDADES = {"Abogada": "Abogada Senior.", "Amazon Pro": "Especialista Amazon.", "Marketing": "Directora Marketing.", "Estratega": "CEO Advisor.", "Médico": "Médico.", "Finanzas": "Financiera.", "IA Pro": "Arquitecto IA.", "Seguridad": "Ciberseguridad."}
-TONOS = {"Analítica": "Fría y lógica.", "Sarcástica": "Cínica e irónica.", "Empática": "Cálida y paciente.", "Motivadora": "Enérgica.", "Ejecutiva": "Directa al ROI.", "Conspiranoica": "Suspicaz."}
+ESPECIALIDADES = {"Abogada": "Abogada.", "Amazon Pro": "Amazon.", "Marketing": "Marketing.", "Estratega": "CEO.", "Médico": "Médico.", "Finanzas": "Finanzas.", "IA Pro": "IA.", "Seguridad": "Seguridad."}
+TONOS = {"Analítica": "Lógica.", "Sarcástica": "Cínica.", "Empática": "Suave.", "Motivadora": "Éxito.", "Ejecutiva": "ROI.", "Conspiranoica": "Oculto."}
 
 if "messages" not in st.session_state: st.session_state.messages = []
-if "pdf_text" not in st.session_state: st.session_state.pdf_text = ""
+if "doc_text" not in st.session_state: st.session_state.doc_text = ""
 
 # --- 4. BARRA LATERAL ---
 with st.sidebar:
     st.markdown("<h2 style='color: white; font-weight: 200; font-size: 1.2rem;'>WORKSPACE</h2>", unsafe_allow_html=True)
     if st.button("NUEVA CONVERSACIÓN"):
-        st.session_state.messages = []; st.session_state.pdf_text = ""; st.rerun()
+        st.session_state.messages = []; st.session_state.doc_text = ""; st.rerun()
     
     st.divider()
     esp_act = st.selectbox("ESPECIALIDAD:", list(ESPECIALIDADES.keys()))
     ton_act = st.selectbox("PERSONALIDAD:", list(TONOS.keys()))
     
     st.divider()
-    st.markdown("<p style='color: #ff4b4b; font-size: 0.7rem; font-weight: bold;'>BASE DE CONOCIMIENTO</p>", unsafe_allow_html=True)
-    pdf_upload = st.file_uploader("SUBIR PDF PARA ANALIZAR:", type=['pdf'], accept_multiple_files=True)
+    st.markdown("<p style='color: #ff4b4b; font-size: 0.7rem; font-weight: bold;'>CARGA DE MEDIOS</p>", unsafe_allow_html=True)
+    pdf_up = st.file_uploader("PDF TÉCNICO:", type=['pdf'], accept_multiple_files=True)
+    img_up = st.file_uploader("FOTO / CAPTURA:", type=['png', 'jpg', 'jpeg'])
     
-    if pdf_upload:
-        st.session_state.pdf_text = leer_pdf(pdf_upload)
-        # Mostrar cuánta información ha leído RUTH
-        palabras = len(st.session_state.pdf_text.split())
-        st.caption(f"✅ RUTH ha asimilado {palabras} palabras del documento.")
+    if pdf_up:
+        st.session_state.doc_text = extraer_pdf(pdf_up)
+        st.caption(f"✅ PDF asimilado.")
 
     st.divider()
     try:
@@ -92,28 +93,49 @@ cols = st.columns(8); labels = list(ESPECIALIDADES.keys())
 for i in range(8):
     with cols[i]:
         if st.button(labels[i].upper()):
-            # Inyectamos el PDF en el comando de los botones
-            contexto = f"\nDOCUMENTO CARGADO: {st.session_state.pdf_text[:3000]}\n" if st.session_state.pdf_text else ""
-            sys_inst = f"Eres RUTH {ESPECIALIDADES[esp_act]} ({TONOS[ton_act]}). {contexto} Realiza una acción de tu área."
-            st.session_state.messages.append({"role": "user", "content": f"Acción: {labels[i]}"})
-            c = client.chat.completions.create(messages=[{"role":"system","content": sys_inst}] + st.session_state.messages[-5:], model="llama-3.3-70b-versatile")
-            st.session_state.messages.append({"role": "assistant", "content": c.choices[0].message.content}); st.rerun()
+            st.session_state.messages.append({"role": "user", "content": f"Acción experta: {labels[i]}"})
+            st.rerun()
 
 st.divider()
 
 for msg in st.session_state.messages:
-    if "Acción:" not in msg["content"]:
-        av = ruth_avatar if msg["role"] == "assistant" else None
-        with st.chat_message(msg["role"], avatar=av): st.markdown(msg["content"])
+    av = ruth_avatar if msg["role"] == "assistant" else None
+    with st.chat_message(msg["role"], avatar=av):
+        st.markdown(msg["content"])
 
-if prompt := st.chat_input(f"RUTH {esp_act}"):
+# --- 6. LOGICA DE VISION Y RESPUESTA ---
+if prompt := st.chat_input(f"Hablando con RUTH {esp_act}"):
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"): st.markdown(prompt)
+    
     with st.chat_message("assistant", avatar=ruth_avatar):
-        # EL SECRETO ESTÁ AQUÍ: Pasamos el PDF en cada respuesta
-        contexto = f"\nESTE ES EL TEXTO DEL PDF QUE SUBIÓ EL USUARIO:\n'''{st.session_state.pdf_text[:4000]}'''\nUsa este texto para responder." if st.session_state.pdf_text else ""
-        sys_i = f"Eres RUTH {esp_act} ({TONOS[ton_act]}). {contexto}"
-        
-        c = client.chat.completions.create(messages=[{"role":"system","content": sys_i}] + st.session_state.messages[-5:], model="llama-3.3-70b-versatile")
-        res = c.choices[0].message.content
-        st.markdown(res); st.session_state.messages.append({"role": "assistant", "content": res})
+        try:
+            # Preparamos el contexto
+            contexto = f"\nTEXTO PDF CARGADO: {st.session_state.doc_text[:3000]}" if st.session_state.doc_text else ""
+            sys_i = f"Eres RUTH {ESPECIALIDADES[esp_act]} con tono {TONOS[ton_act]}. {contexto}"
+            
+            # Si hay una imagen, usamos el modelo de Visión
+            if img_up:
+                base64_img = codificar_imagen(img_up)
+                c = client.chat.completions.create(
+                    model="llama-3.2-11b-vision-preview", # Modelo especial de visión
+                    messages=[
+                        {"role": "system", "content": sys_i},
+                        {"role": "user", "content": [
+                            {"type": "text", "text": prompt},
+                            {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{base64_img}"}}
+                        ]}
+                    ]
+                )
+            else:
+                # Si no hay imagen, usamos el modelo de texto estándar
+                c = client.chat.completions.create(
+                    model="llama-3.3-70b-versatile",
+                    messages=[{"role": "system", "content": sys_i}] + st.session_state.messages[-5:]
+                )
+            
+            res = c.choices[0].message.content
+            st.markdown(res)
+            st.session_state.messages.append({"role": "assistant", "content": res})
+        except Exception as e:
+            st.error(f"Error de procesamiento: {e}")
