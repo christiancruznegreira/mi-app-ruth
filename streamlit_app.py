@@ -4,13 +4,13 @@ from supabase import create_client, Client
 from PyPDF2 import PdfReader
 import os
 import datetime
+import uuid
 
-# --- 1. ESTÉTICA PREMIUM (PARTÍCULAS, NEÓN Y FLECHA) ---
+# --- 1. ESTÉTICA PREMIUM (PARTÍCULAS Y NEÓN) ---
 st.set_page_config(page_title="RUTH Pro", page_icon="●", layout="wide", initial_sidebar_state="expanded")
 
 st.markdown("""
     <style>
-    /* FONDO CINÉTICO */
     [data-testid="stAppViewContainer"], [data-testid="stSidebar"], .stSidebarContent {
         background-color: #0e1117 !important;
         background-image: 
@@ -22,7 +22,7 @@ st.markdown("""
     }
     @keyframes drift { from { background-position: 0% 0%; } to { background-position: 5% 5%; } }
 
-    /* FLECHA DE RESCATE ROJA INMORTAL */
+    /* FLECHA DE RESCATE FIJA */
     [data-testid="stSidebarCollapsedControl"] {
         background-color: #ff4b4b !important; color: white !important;
         border-radius: 0 10px 10px 0 !important; left: 0 !important;
@@ -52,32 +52,29 @@ st.markdown("""
     <div class="ruth-subtitle">UNIVERSAL BUSINESS SUITE</div>
 """, unsafe_allow_html=True)
 
-# --- 2. DICCIONARIOS DE INTELIGENCIA CRUZADA ---
-ESPECIALIDADES = {
-    "Abogada": "experta en Derecho y Consultoría Legal.",
-    "Amazon Pro": "Especialista en Amazon FBA y algoritmos.",
-    "Marketing": "Directora de Marketing y Copywriter Pro.",
-    "Estratega": "CEO Advisor y Estratega de Negocios.",
-    "Médico": "Médico Especialista con rigor científico.",
-    "Finanzas": "Analista de Inversiones y Wealth Manager.",
-    "IA Pro": "Arquitecto de IA y experto en automatización.",
-    "Seguridad": "Líder en Ciberseguridad y Privacidad."
-}
+# --- 2. INICIALIZACIÓN DE SESIÓN Y CONEXIONES ---
+if "messages" not in st.session_state: st.session_state.messages = []
+if "session_id" not in st.session_state: st.session_state.session_id = str(uuid.uuid4())
+if "pdf_data" not in st.session_state: st.session_state.pdf_data = ""
 
-TONOS = {
-    "Sarcástica": "Tu tono es inteligente pero mordaz, cínico y cortante. Te burlas de la mediocridad.",
-    "Empática": "Tu tono es suave, protector, paciente y lleno de apoyo emocional cálido.",
-    "Analítica": "Tu tono es frío, basado solo en datos crudos, lógica pura y hechos.",
-    "Motivadora": "Tu tono es enérgico, inspirador y agresivamente positivo hacia el éxito.",
-    "Ejecutiva": "Tu tono es de alto nivel CEO. Breve, directo al grano y enfocado en el ROI.",
-    "Conspiranoica": "Tu tono es suspicaz. Buscas patrones de control ocultos detrás de cada dato."
-}
-
-# --- 3. CONEXIONES ---
 client = Groq(api_key=st.secrets["GROQ_API_KEY"].strip())
 supabase = create_client(st.secrets["SUPABASE_URL"], st.secrets["SUPABASE_KEY"])
 icon_path = "logo_ruth.png"
 ruth_avatar = icon_path if os.path.exists(icon_path) else "●"
+
+def guardar_progreso():
+    """Guarda o actualiza la conversación actual en Supabase."""
+    if len(st.session_state.messages) > 1:
+        try:
+            data = {
+                "user_email": "Invitado",
+                "messages": st.session_state.messages,
+                "session_id": st.session_state.session_id,
+                "updated_at": datetime.datetime.now().isoformat()
+            }
+            # Usamos upsert para que si el session_id ya existe, se actualice en lugar de crear uno nuevo
+            supabase.table("chats").upsert(data, on_conflict="session_id").execute()
+        except: pass
 
 def extraer_pdf(archivos):
     texto = ""
@@ -88,74 +85,93 @@ def extraer_pdf(archivos):
         except: pass
     return texto
 
-def guardar_nube(mensajes):
-    if len(mensajes) > 1:
-        try: supabase.table("chats").insert({"user_email": "Invitado", "messages": mensajes}).execute()
-        except: pass
+# --- 3. DICCIONARIOS ---
+ESPECIALIDADES = {
+    "Abogada": "como Abogada Senior de Élite.",
+    "Amazon Pro": "como Especialista en Amazon FBA.",
+    "Marketing": "como Directora de Marketing Pro.",
+    "Estratega": "como CEO Advisor Estratégico.",
+    "Médico": "como Médico Especialista.",
+    "Finanzas": "como Analista de Inversiones.",
+    "IA Pro": "como Arquitecto de IA.",
+    "Seguridad": "como Experto en Ciberseguridad."
+}
 
-if "messages" not in st.session_state: st.session_state.messages = []
-if "pdf_data" not in st.session_state: st.session_state.pdf_data = ""
+TONOS = {
+    "Analítica": "Tono lógico, frío y basado en datos.",
+    "Sarcástica": "Tono cínico, mordaz e inteligente.",
+    "Empática": "Tono suave, paciente y empático.",
+    "Motivadora": "Tono enérgico e inspirador.",
+    "Ejecutiva": "Tono sobrio y directo al ROI.",
+    "Conspiranoica": "Tono suspicaz y detectivesco."
+}
 
-# --- 4. BARRA LATERAL (WORKSPACE) ---
+# --- 4. BARRA LATERAL (CONTROL CENTER) ---
 with st.sidebar:
     st.markdown("<h2 style='color: white; font-weight: 200; font-size: 1.2rem;'>WORKSPACE</h2>", unsafe_allow_html=True)
+    
     if st.button("NUEVA CONVERSACIÓN"):
-        guardar_nube(st.session_state.messages)
-        st.session_state.messages = []; st.session_state.pdf_data = ""; st.rerun()
+        guardar_progreso()
+        st.session_state.messages = []
+        st.session_state.session_id = str(uuid.uuid4())
+        st.session_state.pdf_data = ""
+        st.rerun()
     
     st.divider()
     esp_act = st.selectbox("ESPECIALIDAD:", list(ESPECIALIDADES.keys()))
     ton_act = st.selectbox("PERSONALIDAD:", list(TONOS.keys()))
     
     st.divider()
-    st.markdown("<p style='color: #ff4b4b; font-size: 0.7rem; font-weight: bold;'>BASE DE CONOCIMIENTO</p>", unsafe_allow_html=True)
     pdf_up = st.file_uploader("ASIMILAR PDF:", type=['pdf'], accept_multiple_files=True)
     if pdf_up:
         st.session_state.pdf_data = extraer_pdf(pdf_up)
-        st.caption("✅ Conocimiento integrado.")
+        st.caption("✅ Conocimiento asimilado.")
 
     st.divider()
-    st.markdown("<p style='color: #888; font-size: 0.7rem;'>HISTORIAL CLOUD</p>", unsafe_allow_html=True)
+    st.markdown("<p style='color: #888; font-size: 0.7rem;'>HISTORIAL DE SESIONES</p>", unsafe_allow_html=True)
     try:
-        res = supabase.table("chats").select("*").eq("user_email", "Invitado").order("created_at", desc=True).limit(5).execute()
+        res = supabase.table("chats").select("*").eq("user_email", "Invitado").order("updated_at", desc=True).limit(10).execute()
         for chat in res.data:
-            tit = "VACÍO"
+            m_u = "NUEVA SESIÓN"
             for m in chat['messages']:
-                if m['role'] == 'user': tit = m['content'][:20].upper() + "..."; break
-            if st.button(f"{tit}"): st.session_state.messages = chat['messages']; st.rerun()
-    except: pass
+                if m['role'] == 'user': m_u = m['content'][:20].upper() + "..."; break
+            if st.button(f"{m_u}", key=chat['session_id']):
+                st.session_state.messages = chat['messages']
+                st.session_state.session_id = chat['session_id']
+                st.rerun()
+    except: st.caption("Conectando con historial...")
 
-# --- 5. LOGICA DE IA (ACTITUD DINÁMICA) ---
-def responder_ia(prompt_usuario, es_boton=False):
-    contexto_pdf = f"\nUSA ESTE CONOCIMIENTO: {st.session_state.pdf_data[:3500]}" if st.session_state.pdf_data else ""
-    sys_inst = f"Eres RUTH. Actúas como {ESPECIALIDADES[esp_act]} {TONOS[ton_act]} {contexto_pdf} PROHIBIDO disculparte. Actúa fiel a tu rol ahora."
+# --- 5. LÓGICA DE IA (DINAMISMO REAL) ---
+def procesar_ia(prompt_usuario):
+    ctx_pdf = f"\nUSA ESTE DOC: {st.session_state.pdf_data[:3500]}" if st.session_state.pdf_data else ""
+    sys_inst = f"Identidad RUTH: {ESPECIALIDADES[esp_act]} Tono: {TONOS[ton_act]}. {ctx_pdf} PROHIBIDO disculparte por cambiar de modo."
     
-    mensajes = [{"role": "system", "content": sys_inst}] + st.session_state.messages[-10:]
+    mensajes_finales = [{"role": "system", "content": sys_inst}] + st.session_state.messages[-10:]
     
-    c = client.chat.completions.create(model="llama-3.3-70b-versatile", messages=mensajes)
-    return c.choices[0].message.content
+    c = client.chat.completions.create(model="llama-3.3-70b-versatile", messages=mensajes_finales)
+    respuesta = c.choices[0].message.content
+    
+    st.session_state.messages.append({"role": "assistant", "content": respuesta})
+    guardar_progreso() # GUARDADO AUTOMÁTICO TRAS CADA RESPUESTA
+    st.rerun()
 
-# Botones superiores
+# Botones Ghost
 cols = st.columns(8); labels = list(ESPECIALIDADES.keys())
 for i in range(8):
     with cols[i]:
         if st.button(labels[i].upper()):
-            st.session_state.messages.append({"role": "user", "content": f"Acción experta como {labels[i]}"})
-            res = responder_ia(f"Acción {labels[i]}", es_boton=True)
-            st.session_state.messages.append({"role": "assistant", "content": res}); st.rerun()
+            st.session_state.messages.append({"role": "user", "content": f"Ejecutar acción experta: {labels[i]}"})
+            procesar_ia(f"Acción {labels[i]}")
 
 st.divider()
 
 # --- 6. CHAT LOOP ---
 for msg in st.session_state.messages:
-    if "Acción experta" not in msg["content"]:
+    if "Ejecutar acción" not in msg["content"]:
         av = ruth_avatar if msg["role"] == "assistant" else None
-        with st.chat_message(msg["role"], avatar=av): st.markdown(msg["content"])
+        with st.chat_message(msg["role"], avatar=av):
+            st.markdown(msg["content"])
 
 if prompt := st.chat_input(f"RUTH {esp_act}"):
     st.session_state.messages.append({"role": "user", "content": prompt})
-    with st.chat_message("user"): st.markdown(prompt)
-    with st.chat_message("assistant", avatar=ruth_avatar):
-        respuesta = responder_ia(prompt)
-        st.markdown(respuesta)
-        st.session_state.messages.append({"role": "assistant", "content": respuesta})
+    procesar_ia(prompt)
