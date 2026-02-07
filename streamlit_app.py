@@ -6,28 +6,23 @@ import base64
 import os
 import datetime
 
-# --- 1. CONFIGURACIÓN Y ESTÉTICA (FLECHA Y BARRA FIJAS) ---
+# --- 1. CONFIGURACIÓN Y ESTÉTICA (BARRA Y FLECHA FIJAS) ---
 st.set_page_config(page_title="RUTH Pro", page_icon="●", layout="wide", initial_sidebar_state="expanded")
 
 st.markdown("""
     <style>
-    /* Fondo Premium */
     [data-testid="stAppViewContainer"], [data-testid="stSidebar"], .stSidebarContent {
         background-color: #0e1117 !important;
         background-image: radial-gradient(#1a1d24 1px, transparent 1px) !important;
         background-size: 30px 30px !important;
     }
-
-    /* FLECHA DE RESCATE (GARANTIZADA) */
+    /* FLECHA DE RESCATE ROJA */
     [data-testid="stSidebarCollapsedControl"] {
         background-color: #ff4b4b !important; color: white !important;
-        border-radius: 0px 10px 10px 0px !important; left: 0px !important;
-        top: 20px !important; width: 50px !important; height: 40px !important;
+        border-radius: 0 10px 10px 0 !important; left: 0 !important;
+        top: 15px !important; width: 50px !important; height: 40px !important;
         display: flex !important; justify-content: center !important; z-index: 999999 !important;
     }
-    [data-testid="stSidebarCollapsedControl"] svg { fill: white !important; }
-
-    /* Estética Visual */
     [data-testid="stHeader"] { background: transparent !important; }
     footer { visibility: hidden; }
     @keyframes flicker {
@@ -48,7 +43,7 @@ st.markdown("""
     <div class="ruth-subtitle">UNIVERSAL BUSINESS SUITE</div>
 """, unsafe_allow_html=True)
 
-# --- 2. CONEXIONES Y FUNCIONES ---
+# --- 2. CONEXIONES ---
 client = Groq(api_key=st.secrets["GROQ_API_KEY"].strip())
 supabase = create_client(st.secrets["SUPABASE_URL"], st.secrets["SUPABASE_KEY"])
 icon_path = "logo_ruth.png"
@@ -63,17 +58,10 @@ def extraer_pdf(archivos):
         except: pass
     return texto
 
-def codificar_img(imagen):
-    return base64.b64encode(imagen.read()).decode('utf-8')
-
-# --- 3. DICCIONARIOS ---
-ESPECIALIDADES = {"Abogada": "Abogada.", "Amazon Pro": "Amazon.", "Marketing": "Marketing.", "Estratega": "CEO Advisor.", "Médico": "Médico.", "Finanzas": "Finanzas.", "IA Pro": "IA.", "Seguridad": "Seguridad."}
-TONOS = {"Analítica": "Lógica.", "Sarcástica": "Cínica.", "Empática": "Suave.", "Motivadora": "Éxito.", "Ejecutiva": "ROI.", "Conspiranoica": "Oculto."}
-
 if "messages" not in st.session_state: st.session_state.messages = []
 if "pdf_data" not in st.session_state: st.session_state.pdf_data = ""
 
-# --- 4. BARRA LATERAL (CENTRO DE CONTROL) ---
+# --- 3. BARRA LATERAL ---
 with st.sidebar:
     st.markdown("<h2 style='color: white; font-weight: 200; font-size: 1.2rem;'>WORKSPACE</h2>", unsafe_allow_html=True)
     if st.button("NUEVA CONVERSACIÓN"):
@@ -83,17 +71,20 @@ with st.sidebar:
         st.session_state.messages = []; st.session_state.pdf_data = ""; st.rerun()
     
     st.divider()
+    ESPECIALIDADES = {"Abogada": "Abogada.", "Amazon Pro": "Amazon.", "Marketing": "Marketing.", "Estratega": "CEO Advisor.", "Médico": "Médico.", "Finanzas": "Finanzas.", "IA Pro": "IA.", "Seguridad": "Seguridad."}
+    TONOS = {"Analítica": "Lógica.", "Sarcástica": "Cínica.", "Empática": "Suave.", "Motivadora": "Éxito.", "Ejecutiva": "ROI.", "Conspiranoica": "Oculto."}
+    
     esp_act = st.selectbox("ESPECIALIDAD:", list(ESPECIALIDADES.keys()))
     ton_act = st.selectbox("PERSONALIDAD:", list(TONOS.keys()))
     
     st.divider()
     st.markdown("<p style='color: #ff4b4b; font-size: 0.7rem; font-weight: bold;'>CARGA DE MEDIOS</p>", unsafe_allow_html=True)
     pdf_up = st.file_uploader("SUBIR PDF:", type=['pdf'], accept_multiple_files=True)
-    img_up = st.file_uploader("SUBIR FOTO:", type=['png', 'jpg', 'jpeg'])
+    img_up = st.file_uploader("ANALIZAR FOTO:", type=['png', 'jpg', 'jpeg'])
     
     if pdf_up:
         st.session_state.pdf_data = extraer_pdf(pdf_up)
-        st.caption("✅ PDF asimilado.")
+        st.caption("✅ Conocimiento asimilado.")
 
     st.divider()
     try:
@@ -103,45 +94,55 @@ with st.sidebar:
             if st.button(f"{tit}..."): st.session_state.messages = chat['messages']; st.rerun()
     except: pass
 
-# --- 5. CUERPO PRINCIPAL ---
-def enviar_comando(label):
-    sys_inst = f"Identidad: {ESPECIALIDADES[esp_act]} Tono: {TONOS[ton_act]}."
-    st.session_state.messages.append({"role": "user", "content": f"Ejecuta: {label}"})
-    c = client.chat.completions.create(messages=[{"role":"system","content": sys_inst}] + st.session_state.messages[-5:], model="llama-3.3-70b-versatile")
+# --- 4. LÓGICA DE BOTONES ---
+def enviar_c(label):
+    st.session_state.messages.append({"role": "user", "content": f"Ejecuta análisis como {label}"})
+    sys_i = f"Eres RUTH {ESPECIALIDADES[esp_act]} ({TONOS[ton_act]})."
+    c = client.chat.completions.create(model="llama-3.3-70b-versatile", messages=[{"role":"system","content":sys_i}] + st.session_state.messages[-5:])
     st.session_state.messages.append({"role": "assistant", "content": c.choices[0].message.content}); st.rerun()
 
 cols = st.columns(8); labels = list(ESPECIALIDADES.keys())
 for i in range(8):
     with cols[i]:
-        if st.button(labels[i].upper()): enviar_comando(labels[i])
+        if st.button(labels[i].upper()): enviar_c(labels[i])
 
 st.divider()
 
+# --- 5. CHAT LOOP ---
 for msg in st.session_state.messages:
-    if "Identidad:" not in msg["content"] and "Ejecuta:" not in msg["content"]:
+    if "Ejecuta análisis" not in msg["content"]:
         av = ruth_avatar if msg["role"] == "assistant" else None
         with st.chat_message(msg["role"], avatar=av): st.markdown(msg["content"])
 
-# --- 6. LÓGICA DE RESPUESTA ---
-if prompt := st.chat_input(f"Hablando con RUTH {esp_act}"):
+# --- 6. PROCESAMIENTO DE RESPUESTA (VISIÓN CORREGIDA) ---
+if prompt := st.chat_input(f"RUTH {esp_act}"):
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"): st.markdown(prompt)
+    
     with st.chat_message("assistant", avatar=ruth_avatar):
-        # Inyección de personalidad y PDF
-        contexto = f"\nDOC CARGADO: {st.session_state.pdf_data[:3500]}" if st.session_state.pdf_data else ""
-        sys_i = f"Eres RUTH. Rol: {ESPECIALIDADES[esp_act]} Tono: {TONOS[ton_act]}. {contexto}"
+        contexto = f"\nDOC CARGADO: {st.session_state.pdf_data[:3000]}" if st.session_state.pdf_data else ""
+        sys_i = f"Eres RUTH {ESPECIALIDADES[esp_act]} con tono {TONOS[ton_act]}. {contexto}"
         
-        if img_up:
-            b64 = codificar_img(img_up)
-            c = client.chat.completions.create(
-                model="llama-3.2-11b-vision-preview",
-                messages=[{"role":"system","content":sys_i}, {"role":"user","content":[{"type":"text","text":prompt}, {"type":"image_url","image_url":{"url":f"data:image/jpeg;base64,{b64}"}}]}]
-            )
-        else:
-            c = client.chat.completions.create(
-                model="llama-3.3-70b-versatile",
-                messages=[{"role":"system","content":sys_i}] + st.session_state.messages[-5:]
-            )
-        
-        res = c.choices[0].message.content
-        st.markdown(res); st.session_state.messages.append({"role": "assistant", "content": res})
+        try:
+            if img_up:
+                # Usamos getvalue() para evitar el error de BadRequest
+                base64_image = base64.b64encode(img_up.getvalue()).decode('utf-8')
+                c = client.chat.completions.create(
+                    model="llama-3.2-11b-vision-preview",
+                    messages=[
+                        {"role": "user", "content": [
+                            {"type": "text", "text": f"{sys_i}\n\nPregunta: {prompt}"},
+                            {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"}}
+                        ]}
+                    ]
+                )
+            else:
+                c = client.chat.completions.create(
+                    model="llama-3.3-70b-versatile",
+                    messages=[{"role":"system","content":sys_i}] + st.session_state.messages[-5:]
+                )
+            
+            res = c.choices[0].message.content
+            st.markdown(res); st.session_state.messages.append({"role": "assistant", "content": res})
+        except Exception as e:
+            st.error(f"Error de Groq: {e}")
