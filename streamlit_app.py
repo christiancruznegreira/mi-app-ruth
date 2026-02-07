@@ -19,7 +19,7 @@ st.markdown("""
     /* FLECHA DE RESCATE ROJA */
     [data-testid="stSidebarCollapsedControl"] {
         background-color: #ff4b4b !important; color: white !important;
-        border-radius: 0 10px 10px 0 !important; left: 0 !important;
+        border-radius: 0px 10px 10px 0px !important; left: 0px !important;
         top: 15px !important; width: 50px !important; height: 40px !important;
         display: flex !important; justify-content: center !important; z-index: 999999 !important;
     }
@@ -30,7 +30,7 @@ st.markdown("""
         20%, 24%, 55% { text-shadow: none; color: #330000; }
     }
     .ruth-header { text-align: center; padding-top: 1rem; color: #ff4b4b; font-size: 5rem; animation: flicker 3s infinite alternate; font-weight: 100; letter-spacing: 1.2rem; }
-    .ruth-subtitle { text-align: center; color: #888; font-size: 0.8rem; letter-spacing: 0.3rem; margin-top: -10px; margin-bottom: 3rem; font-weight: bold;}
+    .ruth-subtitle { text-align: center; color: #888; font-size: 0.8rem; letter-spacing: 0.3rem; margin-top: -15px; margin-bottom: 3rem; font-weight: bold;}
     
     /* BOTONES GHOST */
     [data-testid="column"] { padding: 0px 1px !important; }
@@ -112,10 +112,11 @@ st.divider()
 for msg in st.session_state.messages:
     if "Ejecuta análisis" not in msg["content"]:
         av = ruth_avatar if msg["role"] == "assistant" else None
-        with st.chat_message(msg["role"], avatar=av): st.markdown(msg["content"])
+        with st.chat_message(msg["role"], avatar=av):
+            st.markdown(msg["content"])
 
-# --- 6. PROCESAMIENTO DE RESPUESTA (VISIÓN CORREGIDA) ---
-if prompt := st.chat_input(f"RUTH {esp_act}"):
+# --- 6. PROCESAMIENTO DE RESPUESTA (MODELOS ACTUALIZADOS) ---
+if prompt := st.chat_input(f"Hablando con RUTH {esp_act}"):
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"): st.markdown(prompt)
     
@@ -125,10 +126,9 @@ if prompt := st.chat_input(f"RUTH {esp_act}"):
         
         try:
             if img_up:
-                # Usamos getvalue() para evitar el error de BadRequest
                 base64_image = base64.b64encode(img_up.getvalue()).decode('utf-8')
                 c = client.chat.completions.create(
-                    model="llama-3.2-11b-vision-preview",
+                    model="llama-3.2-11b-vision-8192", # MODELO ACTUALIZADO (PRODUCCIÓN)
                     messages=[
                         {"role": "user", "content": [
                             {"type": "text", "text": f"{sys_i}\n\nPregunta: {prompt}"},
@@ -145,4 +145,4 @@ if prompt := st.chat_input(f"RUTH {esp_act}"):
             res = c.choices[0].message.content
             st.markdown(res); st.session_state.messages.append({"role": "assistant", "content": res})
         except Exception as e:
-            st.error(f"Error de Groq: {e}")
+            st.error(f"Error técnico: {e}")
