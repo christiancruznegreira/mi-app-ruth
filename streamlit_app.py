@@ -33,236 +33,329 @@ st.set_page_config(page_title="RUTH", page_icon="●", layout="wide", initial_si
 
 st.markdown("""
     <style>
-    /* FUENTE SISTEMA iOS */
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+    /* FUENTES PROFESIONALES - SF PRO DISPLAY */
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
     
     * {
-        font-family: -apple-system, BlinkMacSystemFont, 'Inter', sans-serif !important;
+        font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif !important;
     }
     
-    /* FONDO NEGRO MATE PREMIUM */
+    /* FONDO CON TEXTURA PROFESIONAL */
     .stApp {
-        background: linear-gradient(180deg, #0a0a0a 0%, #000000 100%) !important;
-        color: #f5f5f5 !important;
+        background: 
+            linear-gradient(135deg, rgba(255, 59, 48, 0.03) 0%, transparent 50%),
+            linear-gradient(180deg, #0a0a0a 0%, #000000 50%, #0a0a0a 100%) !important;
+        background-attachment: fixed !important;
+        position: relative !important;
     }
     
-    /* FLECHA SIDEBAR - ROJA */
+    /* PATRÓN DE PUNTOS SUTIL */
+    .stApp::before {
+        content: '';
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-image: radial-gradient(circle, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+        background-size: 40px 40px;
+        pointer-events: none;
+        z-index: 0;
+    }
+    
+    /* FLECHA SIDEBAR - ICONO REAL SVG */
     [data-testid="stSidebarCollapsedControl"] {
-        background: #ff3b30 !important;
+        background: linear-gradient(135deg, #ff3b30 0%, #ff2d55 100%) !important;
         border: none !important;
-        border-radius: 0 12px 12px 0 !important;
-        width: 40px !important;
-        height: 40px !important;
-        top: 16px !important;
-        box-shadow: 0 4px 16px rgba(255, 59, 48, 0.4) !important;
-        transition: all 0.2s ease !important;
+        border-radius: 0 14px 14px 0 !important;
+        width: 44px !important;
+        height: 44px !important;
+        top: 20px !important;
+        box-shadow: 
+            0 4px 12px rgba(255, 59, 48, 0.4),
+            0 0 0 1px rgba(255, 255, 255, 0.1) inset !important;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
     }
     [data-testid="stSidebarCollapsedControl"]:hover {
-        background: #ff453a !important;
-        transform: scale(1.05) !important;
+        background: linear-gradient(135deg, #ff453a 0%, #ff375f 100%) !important;
+        transform: translateX(2px) scale(1.05) !important;
+        box-shadow: 
+            0 6px 20px rgba(255, 59, 48, 0.6),
+            0 0 0 1px rgba(255, 255, 255, 0.15) inset !important;
     }
+    
+    /* FORZAR SOLO ICONO SVG - OCULTAR TEXTO */
     [data-testid="stSidebarCollapsedControl"] svg {
         fill: white !important;
+        width: 24px !important;
+        height: 24px !important;
+        display: block !important;
+        filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3)) !important;
+    }
+    [data-testid="stSidebarCollapsedControl"] * {
+        color: transparent !important;
+        font-size: 0 !important;
+    }
+    [data-testid="stSidebarCollapsedControl"] span,
+    [data-testid="stSidebarCollapsedControl"] p,
+    [data-testid="stSidebarCollapsedControl"] div {
+        display: none !important;
     }
 
-    /* SIDEBAR ESTILO iOS */
+    /* SIDEBAR PREMIUM */
     [data-testid="stSidebar"] {
-        background: #1c1c1e !important;
-        border-right: 1px solid #2c2c2e !important;
+        background: linear-gradient(180deg, #1a1a1a 0%, #0f0f0f 100%) !important;
+        border-right: 1px solid rgba(255, 59, 48, 0.2) !important;
+        box-shadow: 4px 0 24px rgba(0, 0, 0, 0.5) !important;
     }
     
     [data-testid="stSidebar"] h3 {
         color: #ff3b30 !important;
-        font-weight: 600 !important;
-        letter-spacing: 0.5px !important;
+        font-weight: 700 !important;
+        font-size: 20px !important;
+        letter-spacing: 2px !important;
         text-align: center !important;
-        margin: 24px 0 !important;
-        font-size: 18px !important;
+        margin: 32px 0 24px 0 !important;
+        text-shadow: 0 0 20px rgba(255, 59, 48, 0.5) !important;
     }
 
-    /* LABELS VISIBLES */
+    /* LABELS SÚPER VISIBLES */
     [data-testid="stSidebar"] .stSelectbox label {
-        color: #8e8e93 !important;
-        font-size: 13px !important;
-        font-weight: 500 !important;
-        letter-spacing: 0.5px !important;
+        color: #ffffff !important;
+        font-size: 11px !important;
+        font-weight: 700 !important;
+        letter-spacing: 1.5px !important;
         text-transform: uppercase !important;
         margin-bottom: 8px !important;
         display: block !important;
+        opacity: 1 !important;
     }
     
-    /* SELECTORES iOS STYLE - TEXTO VISIBLE */
-    [data-testid="stSidebar"] .stSelectbox > div > div {
-        background: #2c2c2e !important;
-        border: 1px solid #3a3a3c !important;
-        border-radius: 10px !important;
+    /* SELECTORES CON TEXTO VISIBLE */
+    [data-testid="stSidebar"] .stSelectbox div[data-baseweb="select"] {
+        background: rgba(30, 30, 30, 0.8) !important;
+        border: 1.5px solid rgba(255, 59, 48, 0.3) !important;
+        border-radius: 12px !important;
+        transition: all 0.3s ease !important;
+    }
+    [data-testid="stSidebar"] .stSelectbox div[data-baseweb="select"]:hover {
+        background: rgba(40, 40, 40, 0.9) !important;
+        border-color: rgba(255, 59, 48, 0.6) !important;
+        box-shadow: 0 0 0 3px rgba(255, 59, 48, 0.1) !important;
+    }
+    
+    /* TEXTO DENTRO DEL SELECTOR - BLANCO BRILLANTE */
+    [data-testid="stSidebar"] .stSelectbox div[data-baseweb="select"] > div {
         color: #ffffff !important;
+        font-size: 15px !important;
+        font-weight: 500 !important;
+        padding: 12px 16px !important;
+    }
+    
+    /* DROPDOWN MENU */
+    div[role="listbox"] {
+        background: #1a1a1a !important;
+        border: 1.5px solid rgba(255, 59, 48, 0.3) !important;
+        border-radius: 12px !important;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6) !important;
+    }
+    
+    /* OPTIONS EN DROPDOWN - BLANCO */
+    div[role="option"] {
+        color: #ffffff !important;
+        background: transparent !important;
         padding: 12px 16px !important;
         font-size: 15px !important;
-        font-weight: 400 !important;
+        font-weight: 500 !important;
         transition: all 0.2s ease !important;
     }
-    [data-testid="stSidebar"] .stSelectbox > div > div:hover {
-        background: #3a3a3c !important;
-        border-color: #ff3b30 !important;
-    }
-    
-    /* DROPDOWN OPTIONS - TEXTO VISIBLE */
-    [data-testid="stSidebar"] .stSelectbox div[role="listbox"] {
-        background: #2c2c2e !important;
-        border: 1px solid #3a3a3c !important;
-        border-radius: 10px !important;
-    }
-    [data-testid="stSidebar"] .stSelectbox div[role="option"] {
-        color: #ffffff !important;
-        background: #2c2c2e !important;
-        padding: 12px 16px !important;
-        font-size: 15px !important;
-    }
-    [data-testid="stSidebar"] .stSelectbox div[role="option"]:hover {
-        background: #3a3a3c !important;
+    div[role="option"]:hover {
+        background: rgba(255, 59, 48, 0.15) !important;
         color: #ff3b30 !important;
     }
+    div[role="option"][aria-selected="true"] {
+        background: rgba(255, 59, 48, 0.2) !important;
+        color: #ff3b30 !important;
+        font-weight: 600 !important;
+    }
 
-    /* MENSAJES ESTILO CLAUDE */
+    /* MENSAJES PROFESIONALES */
     [data-testid="stChatMessage"] {
-        background: #1c1c1e !important;
-        border: 1px solid #2c2c2e !important;
+        background: rgba(26, 26, 26, 0.8) !important;
+        backdrop-filter: blur(20px) !important;
+        border: 1px solid rgba(255, 255, 255, 0.05) !important;
         border-left: 3px solid #ff3b30 !important;
         border-radius: 16px !important;
-        padding: 20px !important;
-        margin: 16px 0 !important;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2) !important;
-        transition: all 0.2s ease !important;
+        padding: 24px !important;
+        margin: 20px 0 !important;
+        box-shadow: 
+            0 4px 16px rgba(0, 0, 0, 0.3),
+            0 0 0 1px rgba(255, 255, 255, 0.02) inset !important;
+        transition: all 0.3s ease !important;
     }
     [data-testid="stChatMessage"]:hover {
-        background: #2c2c2e !important;
+        background: rgba(30, 30, 30, 0.9) !important;
+        border-left-color: #ff453a !important;
         transform: translateX(4px) !important;
+        box-shadow: 
+            0 8px 24px rgba(0, 0, 0, 0.4),
+            0 0 0 1px rgba(255, 59, 48, 0.1) inset !important;
     }
     [data-testid="stChatMessage"] p {
-        color: #f5f5f5 !important;
+        color: #f0f0f0 !important;
         font-size: 15px !important;
-        line-height: 1.6 !important;
+        line-height: 1.7 !important;
         font-weight: 400 !important;
+        letter-spacing: 0.2px !important;
     }
 
-    /* TÍTULO NEÓN ROJO */
-    @keyframes neon-pulse {
+    /* TÍTULO NEÓN PROFESIONAL */
+    @keyframes neon-breathe {
         0%, 100% {
             text-shadow: 
-                0 0 10px rgba(255, 59, 48, 0.8),
-                0 0 20px rgba(255, 59, 48, 0.6),
-                0 0 30px rgba(255, 59, 48, 0.4);
+                0 0 10px rgba(255, 59, 48, 0.6),
+                0 0 20px rgba(255, 59, 48, 0.4),
+                0 0 30px rgba(255, 59, 48, 0.2),
+                0 0 40px rgba(255, 59, 48, 0.1);
         }
         50% {
             text-shadow: 
-                0 0 20px rgba(255, 59, 48, 1),
-                0 0 30px rgba(255, 59, 48, 0.8),
-                0 0 40px rgba(255, 59, 48, 0.6);
+                0 0 20px rgba(255, 59, 48, 0.9),
+                0 0 30px rgba(255, 59, 48, 0.6),
+                0 0 40px rgba(255, 59, 48, 0.4),
+                0 0 60px rgba(255, 59, 48, 0.2);
         }
     }
     
     .ruth-header {
         text-align: center;
-        color: #ff3b30;
-        font-size: clamp(48px, 10vw, 80px);
-        font-weight: 700 !important;
-        letter-spacing: clamp(8px, 3vw, 24px);
-        margin: clamp(32px, 8vh, 64px) 0 clamp(8px, 2vh, 16px) 0;
-        animation: neon-pulse 3s ease-in-out infinite;
+        background: linear-gradient(135deg, #ff3b30 0%, #ff2d55 50%, #ff3b30 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        font-size: clamp(52px, 10vw, 88px);
+        font-weight: 800 !important;
+        letter-spacing: clamp(12px, 4vw, 28px);
+        margin: clamp(40px, 8vh, 72px) 0 clamp(12px, 2vh, 20px) 0;
+        animation: neon-breathe 4s ease-in-out infinite;
         line-height: 1;
+        filter: drop-shadow(0 4px 24px rgba(255, 59, 48, 0.4));
     }
     
     .ruth-subtitle {
         text-align: center;
-        color: #8e8e93;
+        color: #999;
         font-size: clamp(10px, 1.5vw, 13px);
-        font-weight: 500 !important;
-        letter-spacing: clamp(2px, 1vw, 4px);
-        margin-bottom: clamp(32px, 6vh, 48px);
+        font-weight: 600 !important;
+        letter-spacing: clamp(3px, 1.5vw, 5px);
+        margin-bottom: clamp(40px, 7vh, 56px);
         text-transform: uppercase;
     }
 
-    /* BOTONES iOS STYLE */
+    /* BOTONES PROFESIONALES */
     .stButton>button {
-        background: #1c1c1e !important;
-        border: 1px solid #3a3a3c !important;
-        border-radius: 12px !important;
-        color: #f5f5f5 !important;
-        padding: 16px 20px !important;
-        font-size: 14px !important;
-        font-weight: 500 !important;
-        letter-spacing: 0.5px !important;
+        background: linear-gradient(135deg, rgba(30, 30, 30, 0.6) 0%, rgba(20, 20, 20, 0.8) 100%) !important;
+        backdrop-filter: blur(10px) !important;
+        border: 1.5px solid rgba(255, 255, 255, 0.08) !important;
+        border-radius: 14px !important;
+        color: #e0e0e0 !important;
+        padding: 18px 24px !important;
+        font-size: 13px !important;
+        font-weight: 600 !important;
+        letter-spacing: 1px !important;
         text-transform: uppercase !important;
-        transition: all 0.2s ease !important;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
         width: 100% !important;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
+        box-shadow: 
+            0 2px 8px rgba(0, 0, 0, 0.2),
+            0 0 0 1px rgba(255, 255, 255, 0.03) inset !important;
     }
     
     .stButton>button:hover {
-        background: #2c2c2e !important;
-        border-color: #ff3b30 !important;
+        background: linear-gradient(135deg, rgba(255, 59, 48, 0.15) 0%, rgba(255, 45, 85, 0.2) 100%) !important;
+        border-color: rgba(255, 59, 48, 0.4) !important;
         color: #ff3b30 !important;
-        transform: translateY(-2px) !important;
-        box-shadow: 0 4px 16px rgba(255, 59, 48, 0.2) !important;
+        transform: translateY(-3px) scale(1.02) !important;
+        box-shadow: 
+            0 8px 24px rgba(255, 59, 48, 0.25),
+            0 0 0 1px rgba(255, 59, 48, 0.1) inset !important;
+    }
+    .stButton>button:active {
+        transform: translateY(-1px) scale(0.98) !important;
     }
 
     [data-testid="stSidebar"] .stButton>button {
-        padding: 12px !important;
-        font-size: 13px !important;
+        padding: 14px 16px !important;
+        font-size: 12px !important;
         margin: 8px 0 !important;
     }
     
     .delete-history-btn button {
-        background: rgba(255, 59, 48, 0.1) !important;
-        border: 1px solid rgba(255, 59, 48, 0.3) !important;
+        background: linear-gradient(135deg, rgba(255, 59, 48, 0.15) 0%, rgba(255, 45, 85, 0.2) 100%) !important;
+        border: 1.5px solid rgba(255, 59, 48, 0.4) !important;
         color: #ff3b30 !important;
     }
     .delete-history-btn button:hover {
-        background: rgba(255, 59, 48, 0.2) !important;
+        background: linear-gradient(135deg, rgba(255, 59, 48, 0.25) 0%, rgba(255, 45, 85, 0.3) 100%) !important;
+        border-color: rgba(255, 59, 48, 0.6) !important;
     }
 
-    /* INPUT CHAT iOS */
+    /* INPUT CHAT PROFESIONAL */
     [data-testid="stChatInput"] {
-        background: #1c1c1e !important;
-        border: 1px solid #3a3a3c !important;
+        background: rgba(26, 26, 26, 0.8) !important;
+        backdrop-filter: blur(20px) !important;
+        border: 1.5px solid rgba(255, 255, 255, 0.08) !important;
         border-radius: 24px !important;
         padding: 4px !important;
+        box-shadow: 
+            0 4px 16px rgba(0, 0, 0, 0.3),
+            0 0 0 1px rgba(255, 255, 255, 0.02) inset !important;
     }
     [data-testid="stChatInput"]:focus-within {
-        border-color: #ff3b30 !important;
-        box-shadow: 0 0 0 4px rgba(255, 59, 48, 0.1) !important;
+        border-color: rgba(255, 59, 48, 0.5) !important;
+        box-shadow: 
+            0 4px 20px rgba(255, 59, 48, 0.2),
+            0 0 0 4px rgba(255, 59, 48, 0.08) !important;
     }
     [data-testid="stChatInput"] textarea {
-        color: #f5f5f5 !important;
+        color: #f0f0f0 !important;
         font-size: 15px !important;
         font-weight: 400 !important;
+        letter-spacing: 0.3px !important;
     }
     [data-testid="stChatInput"] textarea::placeholder {
-        color: #8e8e93 !important;
+        color: #666 !important;
     }
 
-    /* LOGIN iOS STYLE */
+    /* LOGIN PROFESIONAL */
     div[data-testid="stTextInput"] input {
-        background: #1c1c1e !important;
-        border: 1px solid #3a3a3c !important;
-        border-radius: 12px !important;
-        color: #f5f5f5 !important;
-        padding: 16px !important;
+        background: rgba(26, 26, 26, 0.8) !important;
+        backdrop-filter: blur(10px) !important;
+        border: 1.5px solid rgba(255, 255, 255, 0.08) !important;
+        border-radius: 14px !important;
+        color: #f0f0f0 !important;
+        padding: 18px !important;
         text-align: center !important;
         font-size: 15px !important;
-        font-weight: 400 !important;
-        letter-spacing: 1px !important;
-        transition: all 0.2s ease !important;
+        font-weight: 500 !important;
+        letter-spacing: 1.5px !important;
+        transition: all 0.3s ease !important;
+        box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.02) inset !important;
     }
     div[data-testid="stTextInput"] input:focus {
-        background: #2c2c2e !important;
-        border-color: #ff3b30 !important;
+        background: rgba(30, 30, 30, 0.9) !important;
+        border-color: rgba(255, 59, 48, 0.5) !important;
         outline: none !important;
-        box-shadow: 0 0 0 4px rgba(255, 59, 48, 0.1) !important;
+        box-shadow: 
+            0 0 0 4px rgba(255, 59, 48, 0.1),
+            0 0 0 1px rgba(255, 59, 48, 0.1) inset !important;
     }
     div[data-testid="stTextInput"] input::placeholder {
-        color: #8e8e93 !important;
+        color: #666 !important;
+        font-weight: 400 !important;
     }
     div[data-testid="stTextInput"] label { 
         display: none !important; 
@@ -270,19 +363,26 @@ st.markdown("""
 
     /* IMAGEN GENERADA */
     .generated-image {
-        border: 2px solid #ff3b30 !important;
+        border: 2px solid rgba(255, 59, 48, 0.4) !important;
         border-radius: 16px !important;
-        box-shadow: 0 8px 32px rgba(255, 59, 48, 0.3) !important;
-        margin: 16px 0 !important;
+        box-shadow: 
+            0 8px 32px rgba(255, 59, 48, 0.3),
+            0 0 0 1px rgba(255, 59, 48, 0.2) inset !important;
+        margin: 20px 0 !important;
     }
 
-    /* DIVISOR ROJO */
+    /* DIVISOR ELEGANTE */
     hr {
         border: none !important;
         height: 1px !important;
-        background: linear-gradient(90deg, transparent, #ff3b30, transparent) !important;
-        margin: 32px 0 !important;
-        opacity: 0.3 !important;
+        background: linear-gradient(90deg, 
+            transparent 0%, 
+            rgba(255, 59, 48, 0.1) 20%,
+            rgba(255, 59, 48, 0.3) 50%,
+            rgba(255, 59, 48, 0.1) 80%,
+            transparent 100%) !important;
+        margin: 40px 0 !important;
+        box-shadow: 0 0 20px rgba(255, 59, 48, 0.2) !important;
     }
 
     /* OCULTAR ELEMENTOS STREAMLIT */
@@ -290,63 +390,67 @@ st.markdown("""
     footer { visibility: hidden; }
     #MainMenu { visibility: hidden; }
     
-    /* SCROLLBAR iOS */
+    /* SCROLLBAR PREMIUM */
     ::-webkit-scrollbar {
-        width: 8px;
-        height: 8px;
+        width: 10px;
+        height: 10px;
     }
     ::-webkit-scrollbar-track {
-        background: #1c1c1e;
+        background: #0a0a0a;
+        border-left: 1px solid rgba(255, 255, 255, 0.05);
     }
     ::-webkit-scrollbar-thumb {
-        background: #ff3b30;
-        border-radius: 4px;
+        background: linear-gradient(180deg, #ff3b30 0%, #ff2d55 100%);
+        border-radius: 5px;
+        box-shadow: 0 0 10px rgba(255, 59, 48, 0.5);
     }
     ::-webkit-scrollbar-thumb:hover {
-        background: #ff453a;
+        background: linear-gradient(180deg, #ff453a 0%, #ff375f 100%);
     }
 
-    /* MENSAJES ERROR/SUCCESS iOS */
+    /* MENSAJES ERROR/SUCCESS */
     .stSuccess, .stError {
-        background: #1c1c1e !important;
-        border: 1px solid #ff3b30 !important;
+        background: rgba(26, 26, 26, 0.8) !important;
+        backdrop-filter: blur(10px) !important;
+        border: 1.5px solid rgba(255, 59, 48, 0.4) !important;
         border-radius: 12px !important;
         color: #ff3b30 !important;
         font-size: 14px !important;
         font-weight: 500 !important;
         padding: 16px !important;
+        box-shadow: 0 4px 16px rgba(255, 59, 48, 0.2) !important;
     }
 
     /* RESPONSIVE */
     @media (max-width: 768px) {
         .ruth-header {
-            font-size: 36px !important;
-            letter-spacing: 6px !important;
-            margin: 24px 0 8px 0 !important;
+            font-size: 40px !important;
+            letter-spacing: 8px !important;
+            margin: 32px 0 12px 0 !important;
         }
         .ruth-subtitle {
             font-size: 9px !important;
             letter-spacing: 2px !important;
         }
         .stButton>button {
-            padding: 14px 12px !important;
+            padding: 16px 14px !important;
             font-size: 12px !important;
         }
         [data-testid="stSidebar"] {
             width: 85vw !important;
         }
         [data-testid="stChatMessage"] {
-            padding: 16px !important;
+            padding: 18px !important;
         }
     }
     
     @media (max-width: 480px) {
         .ruth-header {
-            font-size: 28px !important;
-            letter-spacing: 4px !important;
+            font-size: 32px !important;
+            letter-spacing: 6px !important;
         }
         .stButton>button {
-            padding: 12px 8px !important;
+            padding: 14px 10px !important;
             font-size: 11px !important;
         }
     }
@@ -368,7 +472,7 @@ if "auth_mode" not in st.session_state:
 
 def login_ui():
     st.markdown('<div class="ruth-header">RUTH</div>', unsafe_allow_html=True)
-    st.markdown('<div class="ruth-subtitle">UNIVERSAL BUSINESS SUITE</div>', unsafe_allow_html=True)
+    st.markdown('<div class="ruth-subtitle">UNIVERSAL BUSINESS SUITE · IA VISUAL</div>', unsafe_allow_html=True)
     
     col_l, col_c, col_r = st.columns([0.3, 2, 0.3])
     with col_c:
@@ -397,12 +501,12 @@ def login_ui():
             if st.button("REGISTRAR", use_container_width=True):
                 try:
                     supabase.table("usuarios").insert({"username": nu, "password": np}).execute()
-                    st.success("Cuenta creada")
-                    time.sleep(1)
+                    st.success("Cuenta creada exitosamente")
+                    time.sleep(1.5)
                     st.session_state.auth_mode = "login"
                     st.rerun()
                 except:
-                    st.error("Usuario existente")
+                    st.error("Usuario ya existe")
             
             if st.button("VOLVER", use_container_width=True):
                 st.session_state.auth_mode = "login"
@@ -448,15 +552,15 @@ with st.sidebar:
         "Conspiranoica": "Oculto."
     }
     
-    esp_act = st.selectbox("Especialidad", list(ESP.keys()), key="esp_select")
-    ton_act = st.selectbox("Personalidad", list(TON.keys()), key="ton_select")
+    esp_act = st.selectbox("ESPECIALIDAD", list(ESP.keys()), key="esp_select")
+    ton_act = st.selectbox("PERSONALIDAD", list(TON.keys()), key="ton_select")
     
     st.divider()
     
     try:
         res = supabase.table("chats").select("*").eq("user_email", st.session_state.user_name).order("created_at", desc=True).limit(6).execute()
         if res.data:
-            st.markdown("<p style='color: #8e8e93; font-size: 13px; font-weight: 500; letter-spacing: 0.5px; margin-bottom: 12px;'>HISTORIAL</p>", unsafe_allow_html=True)
+            st.markdown("<p style='color: #ffffff; font-size: 11px; font-weight: 700; letter-spacing: 1.5px; margin-bottom: 12px;'>HISTORIAL</p>", unsafe_allow_html=True)
             
             st.markdown('<div class="delete-history-btn">', unsafe_allow_html=True)
             if st.button("🗑️ BORRAR TODO"):
