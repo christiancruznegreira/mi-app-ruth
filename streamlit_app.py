@@ -5,77 +5,80 @@ import os
 import datetime
 import time
 
-# --- 1. ESTÉTICA iOS 26 GLASS (CSS AVANZADO) ---
+# --- 1. ESTÉTICA iOS 26 CRYSTAL (CSS DE ALTA FIDELIDAD) ---
 st.set_page_config(page_title="RUTH Pro", page_icon="●", layout="wide", initial_sidebar_state="collapsed")
 
 st.markdown("""
     <style>
-    /* FONDO BASE CON PARTÍCULAS */
+    /* FONDO BASE Y PARTÍCULAS */
     [data-testid="stAppViewContainer"] {
         background-color: #0e1117 !important;
         background-image: 
-            radial-gradient(circle at 20% 30%, rgba(255, 75, 75, 0.07) 0%, transparent 25%),
-            radial-gradient(circle at 80% 70%, rgba(255, 75, 75, 0.07) 0%, transparent 25%),
+            radial-gradient(circle at 20% 30%, rgba(255, 75, 75, 0.08) 0%, transparent 25%),
+            radial-gradient(circle at 80% 70%, rgba(255, 75, 75, 0.08) 0%, transparent 25%),
             radial-gradient(#1a1d24 1px, transparent 1px) !important;
         background-size: 100% 100%, 100% 100%, 30px 30px !important;
         animation: drift 20s infinite alternate ease-in-out;
     }
     @keyframes drift { from { background-position: 0% 0%; } to { background-position: 5% 5%; } }
 
+    /* EFECTO CRISTAL EN MENSAJES */
+    [data-testid="stChatMessage"] {
+        background-color: rgba(255, 255, 255, 0.03) !important;
+        backdrop-filter: blur(12px) saturate(180%) !important;
+        -webkit-backdrop-filter: blur(12px) saturate(180%) !important;
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        border-radius: 20px !important;
+        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37) !important;
+        margin-bottom: 15px !important;
+        padding: 10px !important;
+    }
+
     /* EFECTO CRISTAL EN BARRA LATERAL */
     [data-testid="stSidebar"] > div:first-child {
-        background-color: rgba(20, 23, 28, 0.7) !important;
-        backdrop-filter: blur(15px) saturate(150%) !important;
+        background-color: rgba(15, 15, 15, 0.7) !important;
+        backdrop-filter: blur(20px) !important;
+        -webkit-backdrop-filter: blur(20px) !important;
         border-right: 1px solid rgba(255, 255, 255, 0.05) !important;
     }
 
-    /* MENSAJES DE CHAT TIPO CRISTAL */
-    [data-testid="stChatMessage"] {
-        background-color: rgba(255, 255, 255, 0.03) !important;
-        backdrop-filter: blur(10px) !important;
-        border: 1px solid rgba(255, 255, 255, 0.05) !important;
-        border-radius: 15px !important;
-        margin-bottom: 10px !important;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3) !important;
-    }
-
-    /* FLECHA DE RESCATE ROJA (GRANDE PARA MÓVIL) */
+    /* FLECHA DE RESCATE (GRANDE Y ROJA) */
     button[kind="headerNoContext"], [data-testid="stSidebarCollapsedControl"] {
         background-color: #ff4b4b !important;
         color: white !important;
         border-radius: 0 15px 15px 0 !important;
         left: 0 !important; top: 15px !important;
         width: 70px !important; height: 60px !important;
-        display: flex !important; z-index: 9999999 !important;
-        box-shadow: 5px 0 25px rgba(255, 0, 0, 0.5) !important;
+        display: flex !important; align-items: center !important; 
+        justify-content: center !important; z-index: 9999999 !important;
+        box-shadow: 0 0 20px rgba(255, 0, 0, 0.4) !important;
     }
     
     [data-testid="stHeader"] { background: transparent !important; }
     footer { visibility: hidden; }
 
-    /* TÍTULO NEÓN */
+    /* TÍTULO NEÓN PARPADEANTE */
     @keyframes flicker {
-        0%, 18%, 22%, 25%, 53%, 57%, 100% { text-shadow: 0 0 4px #f00, 0 0 11px #f00, 0 0 40px #f00; color: #ff4b4b; }
+        0%, 18%, 22%, 25%, 53%, 57%, 100% { text-shadow: 0 0 4px #f00, 0 0 11px #f00, 0 0 19px #f00, 0 0 40px #f00; color: #ff4b4b; }
         20%, 24%, 55% { text-shadow: none; color: #330000; }
     }
-    .ruth-header { text-align: center; padding-top: 1rem; color: #ff4b4b; font-size: 4rem; animation: flicker 3s infinite alternate; font-weight: 100; letter-spacing: 1rem; }
-    .ruth-subtitle { text-align: center; color: #666; font-size: 0.7rem; letter-spacing: 0.3rem; margin-top: -10px; margin-bottom: 2rem; font-weight: bold;}
+    .ruth-header { text-align: center; padding-top: 1rem; color: #ff4b4b; font-size: 4rem; animation: flicker 3s infinite alternate; font-weight: 100; letter-spacing: 1.2rem; }
+    .ruth-subtitle { text-align: center; color: #666; font-size: 0.7rem; letter-spacing: 0.4rem; margin-top: -15px; margin-bottom: 3rem; font-weight: bold;}
 
     /* BOTONES GHOST */
     .stButton>button { 
         border: none !important; background-color: transparent !important; color: #888 !important; 
-        width: 100% !important; height: 45px !important; transition: 0.3s; 
-        text-transform: uppercase; font-size: 0.5rem !important; white-space: nowrap !important;
+        width: 100% !important; transition: 0.3s; text-transform: uppercase; font-size: 0.5rem !important; 
     }
-    .stButton>button:hover { color: #ff4b4b !important; text-shadow: 0 0 10px #f00; transform: translateY(-2px); }
+    .stButton>button:hover { color: #ff4b4b !important; text-shadow: 0 0 10px #f00; transform: scale(1.05); }
 
     /* INPUTS LOGIN CRYSTAL */
     div[data-testid="stTextInput"] label { display: none; }
     div[data-testid="stTextInput"] input { 
         background-color: rgba(255, 255, 255, 0.05) !important;
-        backdrop-filter: blur(5px) !important;
+        backdrop-filter: blur(10px) !important;
         border: 1px solid rgba(255, 255, 255, 0.1) !important;
-        color: white !important; border-radius: 12px !important; text-align: center;
+        color: white !important; border-radius: 15px !important; text-align: center; height: 45px !important;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -93,7 +96,7 @@ if "auth_mode" not in st.session_state: st.session_state.auth_mode = "login"
 def login_ui():
     st.markdown('<div class="ruth-header">R U T H</div>', unsafe_allow_html=True)
     st.markdown('<div class="ruth-subtitle">UNIVERSAL BUSINESS SUITE</div>', unsafe_allow_html=True)
-    col_l, col_c, col_r = st.columns([1, 2, 1])
+    col_l, col_c, col_r = st.columns([1, 1.5, 1])
     with col_c:
         if st.session_state.auth_mode == "login":
             u = st.text_input("U", placeholder="USUARIO", key="l_u")
@@ -102,18 +105,18 @@ def login_ui():
                 res = supabase.table("usuarios").select("*").eq("username", u).eq("password", p).execute()
                 if res.data:
                     st.session_state.logged_in = True; st.session_state.user_name = u; st.rerun()
-                else: st.error("Error de acceso.")
-            if st.button("CREAR CUENTA NUEVA"):
+                else: st.error("Acceso denegado.")
+            if st.button("NUEVA CUENTA"):
                 st.session_state.auth_mode = "signup"; st.rerun()
         else:
             nu = st.text_input("NU", placeholder="USUARIO NUEVO", key="s_u")
             np = st.text_input("NP", type="password", placeholder="CONTRASEÑA NUEVA", key="s_p")
-            if st.button("REGISTRAR SOCIO"):
+            if st.button("REGISTRARME"):
                 try:
                     supabase.table("usuarios").insert({"username": nu, "password": np}).execute()
-                    st.success("Socio registrado."); time.sleep(1); st.session_state.auth_mode = "login"; st.rerun()
-                except: st.error("Usuario ocupado.")
-            if st.button("VOLVER AL LOGIN"):
+                    st.success("Listo."); time.sleep(1); st.session_state.auth_mode = "login"; st.rerun()
+                except: st.error("Usuario no disponible.")
+            if st.button("VOLVER"):
                 st.session_state.auth_mode = "login"; st.rerun()
 
 if not st.session_state.logged_in:
@@ -128,10 +131,10 @@ with st.sidebar:
         st.session_state.logged_in = False; st.rerun()
     
     st.divider()
-    ESP = {"Abogada": "Abogada.", "Amazon Pro": "Amazon.", "Marketing": "Marketing.", "Estratega": "CEO Advisor.", "Médico": "Médico.", "Finanzas": "Finanzas.", "IA Pro": "IA.", "Seguridad": "Seguridad."}
+    ESP = {"Abogada": "Abogada.", "Amazon Pro": "Amazon.", "Marketing": "Marketing.", "Estratega": "CEO.", "Médico": "Médico.", "Finanzas": "Finanzas.", "IA Pro": "IA.", "Seguridad": "Seguridad."}
     TON = {"Analítica": "Lógica.", "Sarcástica": "Cínica.", "Empática": "Suave.", "Motivadora": "Éxito.", "Ejecutiva": "ROI.", "Conspiranoica": "Oculto."}
     esp_act = st.selectbox("E:", list(ESP.keys()))
-    ton_act = st.selectbox("T:", list(TON.keys()))
+    ton_act = st.selectbox("T:", list(TONS.keys()))
     
     st.divider()
     try:
@@ -145,7 +148,7 @@ with st.sidebar:
 st.markdown('<div class="ruth-header">R U T H</div>', unsafe_allow_html=True)
 if "messages" not in st.session_state: st.session_state.messages = []
 
-# Botones Ghost
+# Botones Ghost (8 Especialidades)
 cols = st.columns(8); labels = list(ESP.keys())
 for i in range(8):
     with cols[i]:
@@ -162,7 +165,8 @@ st.divider()
 for msg in st.session_state.messages:
     if "Acción:" not in msg["content"]:
         av = ruth_avatar if msg["role"] == "assistant" else None
-        with st.chat_message(msg["role"], avatar=av): st.markdown(msg["content"])
+        with st.chat_message(msg["role"], avatar=av):
+            st.markdown(msg["content"])
 
 if prompt := st.chat_input(f"RUTH {esp_act}"):
     st.session_state.messages.append({"role": "user", "content": prompt})
