@@ -233,7 +233,7 @@ footer {visibility: hidden;}
 # --- CONEXIONES ---
 client = Groq(api_key=st.secrets["GROQ_API_KEY"].strip())
 supabase = create_client(st.secrets["SUPABASE_URL"], st.secrets["SUPABASE_KEY"])
-ruth_avatar = "●"
+ruth_avatar = None  # Cambiado de "●" a None para evitar error
 
 # --- ESTADOS ---
 if "logged_in" not in st.session_state:
@@ -384,7 +384,8 @@ st.divider()
 # Mostrar mensajes
 for msg in st.session_state.messages:
     if "Activa modo:" not in msg["content"]:
-        with st.chat_message(msg["role"], avatar=ruth_avatar if msg["role"] == "assistant" else None):
+        avatar_to_use = "🤖" if msg["role"] == "assistant" else "👤"
+        with st.chat_message(msg["role"], avatar=avatar_to_use):
             if msg["role"] == "assistant" and "![IMAGEN](" in msg["content"]:
                 partes = msg["content"].split("![IMAGEN](")
                 st.markdown(partes[0])
@@ -399,7 +400,7 @@ if prompt := st.chat_input("Escribe tu mensaje..."):
     with st.chat_message("user"):
         st.markdown(prompt)
     
-    with st.chat_message("assistant", avatar=ruth_avatar):
+    with st.chat_message("assistant", avatar="🤖"):
         if detectar_pedido_imagen(prompt):
             url, desc = generar_imagen(prompt)
             respuesta = f"✨ Imagen generada: **{desc}**\n\n![IMAGEN]({url})\n\n*Generado con IA de RUTH*"
