@@ -4,6 +4,39 @@ from supabase import create_client, Client
 import os
 import datetime
 import time
+import urllib.parse
+
+# --- FUNCIÓN PARA DETECTAR Y GENERAR IMÁGENES ---
+def detectar_pedido_imagen(texto):
+    """Detecta si el usuario pide generar una imagen"""
+    palabras_clave = [
+        'genera una imagen', 'crea una imagen', 'genera un', 'crea un',
+        'muéstrame', 'dibuja', 'diseña', 'imagen de', 'foto de',
+        'logo de', 'ilustra', 'render', 'visualiza'
+    ]
+    texto_lower = texto.lower()
+    return any(palabra in texto_lower for palabra in palabras_clave)
+
+def generar_imagen(prompt_texto):
+    """
+    Genera una URL de imagen usando Pollinations.ai (GRATIS)
+    No requiere API key, es completamente gratuito
+    """
+    # Limpiar el prompt (quitar palabras de comando)
+    prompt_limpio = prompt_texto.lower()
+    for palabra in ['genera una imagen de', 'crea una imagen de', 'genera un', 'crea un', 
+                    'muéstrame', 'dibuja', 'diseña', 'imagen de', 'foto de', 'logo de']:
+        prompt_limpio = prompt_limpio.replace(palabra, '')
+    
+    prompt_limpio = prompt_limpio.strip()
+    
+    # Codificar el prompt para URL
+    prompt_encoded = urllib.parse.quote(prompt_limpio)
+    
+    # URL de Pollinations.ai (GRATIS, sin API key)
+    imagen_url = f"https://image.pollinations.ai/prompt/{prompt_encoded}?width=1024&height=1024&nologo=true"
+    
+    return imagen_url, prompt_limpio
 
 # --- 1. CONFIGURACIÓN Y ESTÉTICA REFINADA ---
 st.set_page_config(page_title="RUTH", page_icon="●", layout="wide", initial_sidebar_state="collapsed")
@@ -28,7 +61,7 @@ st.markdown("""
         color: #ffffff !important;
     }
     
-    /* FLECHA VISUAL REAL (NO TEXTO) */
+    /* FLECHA VISUAL REAL */
     [data-testid="stSidebarCollapsedControl"] {
         background: linear-gradient(135deg, #ff0000 0%, #cc0000 100%) !important;
         border: none !important;
@@ -38,29 +71,15 @@ st.markdown("""
         top: 20px !important;
         transition: all 0.3s ease !important;
         box-shadow: 0 4px 12px rgba(255, 0, 0, 0.3) !important;
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
     }
     [data-testid="stSidebarCollapsedControl"]:hover {
         background: linear-gradient(135deg, #ff3333 0%, #ff0000 100%) !important;
         box-shadow: 0 6px 20px rgba(255, 0, 0, 0.5) !important;
-        width: 38px !important;
     }
-    
-    /* HACER LA FLECHA MÁS VISIBLE */
     [data-testid="stSidebarCollapsedControl"] svg {
         fill: white !important;
         width: 20px !important;
         height: 20px !important;
-        filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5)) !important;
-    }
-    
-    /* OCULTAR CUALQUIER TEXTO DENTRO DE LA FLECHA */
-    [data-testid="stSidebarCollapsedControl"] span,
-    [data-testid="stSidebarCollapsedControl"] p,
-    [data-testid="stSidebarCollapsedControl"] div:not([data-testid]) {
-        display: none !important;
     }
 
     /* SIDEBAR GLASSMORPHISM */
@@ -72,7 +91,6 @@ st.markdown("""
         box-shadow: 4px 0 24px rgba(0, 0, 0, 0.5) !important;
     }
     
-    /* USUARIO EN SIDEBAR */
     [data-testid="stSidebar"] h3 {
         color: #ff0000 !important;
         font-weight: 200 !important;
@@ -89,7 +107,6 @@ st.markdown("""
         font-weight: 300 !important;
         letter-spacing: 0.15rem !important;
         text-transform: uppercase !important;
-        margin-bottom: 0.5rem !important;
     }
     [data-testid="stSidebar"] .stSelectbox > div > div {
         background: rgba(255, 255, 255, 0.03) !important;
@@ -100,46 +117,33 @@ st.markdown("""
         padding: 0.7rem !important;
         font-size: 0.75rem !important;
         font-weight: 300 !important;
-        transition: all 0.3s ease !important;
-    }
-    [data-testid="stSidebar"] .stSelectbox > div > div:hover {
-        background: rgba(255, 255, 255, 0.05) !important;
-        border-color: rgba(255, 0, 0, 0.3) !important;
     }
 
     /* MENSAJES GLASS */
     [data-testid="stChatMessage"] {
         background: rgba(255, 255, 255, 0.02) !important;
         backdrop-filter: blur(15px) !important;
-        -webkit-backdrop-filter: blur(15px) !important;
         border: 1px solid rgba(255, 255, 255, 0.05) !important;
         border-left: 2px solid #ff0000 !important;
         border-radius: 12px !important;
         padding: 1.2rem !important;
         margin: 1rem 0 !important;
-        transition: all 0.3s ease !important;
         box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2) !important;
     }
     [data-testid="stChatMessage"]:hover {
         background: rgba(255, 255, 255, 0.04) !important;
         border-left-color: #ff3333 !important;
         transform: translateX(4px) !important;
-        box-shadow: 0 6px 24px rgba(0, 0, 0, 0.3) !important;
-    }
-    [data-testid="stChatMessage"] p {
-        font-weight: 300 !important;
-        line-height: 1.6 !important;
     }
 
-    /* TÍTULO NEÓN ULTRA FINO */
+    /* TÍTULO NEÓN */
     @keyframes neon-flicker {
         0%, 19.999%, 22%, 62.999%, 64%, 64.999%, 70%, 100% {
             opacity: 1;
             text-shadow: 
                 0 0 10px rgba(255, 0, 0, 0.8),
                 0 0 20px rgba(255, 0, 0, 0.6),
-                0 0 40px rgba(255, 0, 0, 0.4),
-                0 0 60px rgba(255, 0, 0, 0.2);
+                0 0 40px rgba(255, 0, 0, 0.4);
         }
         20%, 21.999%, 63%, 63.999%, 65%, 69.999% {
             opacity: 0.3;
@@ -155,8 +159,6 @@ st.markdown("""
         letter-spacing: clamp(0.8rem, 3vw, 2rem);
         margin: clamp(1.5rem, 5vh, 3rem) 0 clamp(0.5rem, 2vh, 1rem) 0;
         animation: neon-flicker 5s infinite;
-        line-height: 1;
-        filter: drop-shadow(0 0 20px rgba(255, 0, 0, 0.5));
     }
     
     .ruth-subtitle {
@@ -169,11 +171,10 @@ st.markdown("""
         text-transform: uppercase;
     }
 
-    /* BOTONES GLASS REFINADOS */
+    /* BOTONES GLASS */
     .stButton>button {
         background: rgba(255, 255, 255, 0.02) !important;
         backdrop-filter: blur(10px) !important;
-        -webkit-backdrop-filter: blur(10px) !important;
         border: 1px solid rgba(255, 255, 255, 0.08) !important;
         border-radius: 10px !important;
         color: #999 !important;
@@ -182,9 +183,8 @@ st.markdown("""
         font-weight: 300 !important;
         letter-spacing: 0.2rem !important;
         text-transform: uppercase !important;
-        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        transition: all 0.4s ease !important;
         width: 100% !important;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2) !important;
     }
     
     .stButton>button:hover {
@@ -192,45 +192,26 @@ st.markdown("""
         border-color: rgba(255, 0, 0, 0.3) !important;
         color: #ff0000 !important;
         transform: translateY(-2px) !important;
-        box-shadow: 0 6px 20px rgba(255, 0, 0, 0.2) !important;
-    }
-    
-    .stButton>button:active {
-        transform: translateY(0px) !important;
-        box-shadow: 0 2px 8px rgba(255, 0, 0, 0.3) !important;
     }
 
-    /* BOTONES SIDEBAR */
     [data-testid="stSidebar"] .stButton>button {
         padding: 0.8rem !important;
         font-size: 0.65rem !important;
         margin: 0.4rem 0 !important;
-        font-weight: 300 !important;
     }
     
-    /* BOTÓN BORRAR HISTORIAL (ROJO) */
     .delete-history-btn button {
         background: rgba(255, 0, 0, 0.1) !important;
         border: 1px solid rgba(255, 0, 0, 0.3) !important;
         color: #ff0000 !important;
     }
-    .delete-history-btn button:hover {
-        background: rgba(255, 0, 0, 0.2) !important;
-        border-color: rgba(255, 0, 0, 0.5) !important;
-    }
 
-    /* INPUT CHAT GLASS */
+    /* INPUT CHAT */
     [data-testid="stChatInput"] {
         background: rgba(255, 255, 255, 0.02) !important;
         backdrop-filter: blur(15px) !important;
-        -webkit-backdrop-filter: blur(15px) !important;
         border: 1px solid rgba(255, 255, 255, 0.08) !important;
         border-radius: 16px !important;
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2) !important;
-    }
-    [data-testid="stChatInput"]:focus-within {
-        border-color: rgba(255, 0, 0, 0.3) !important;
-        box-shadow: 0 4px 20px rgba(255, 0, 0, 0.15) !important;
     }
     [data-testid="stChatInput"] textarea {
         color: white !important;
@@ -238,7 +219,7 @@ st.markdown("""
         font-weight: 300 !important;
     }
 
-    /* LOGIN GLASS */
+    /* LOGIN */
     div[data-testid="stTextInput"] input {
         background: rgba(255, 255, 255, 0.03) !important;
         backdrop-filter: blur(10px) !important;
@@ -247,26 +228,23 @@ st.markdown("""
         color: #fff !important;
         padding: 1.2rem !important;
         text-align: center !important;
-        font-size: 0.9rem !important;
         font-weight: 300 !important;
         letter-spacing: 0.2rem !important;
-        transition: all 0.3s ease !important;
     }
     div[data-testid="stTextInput"] input:focus {
-        background: rgba(255, 255, 255, 0.05) !important;
         border-color: rgba(255, 0, 0, 0.4) !important;
-        outline: none !important;
         box-shadow: 0 0 20px rgba(255, 0, 0, 0.2) !important;
     }
-    div[data-testid="stTextInput"] input::placeholder {
-        color: #666 !important;
-        font-weight: 200 !important;
-    }
-    div[data-testid="stTextInput"] label { 
-        display: none !important; 
+    div[data-testid="stTextInput"] label { display: none !important; }
+
+    /* IMAGEN GENERADA - ESTILO GLASS */
+    .generated-image {
+        border: 2px solid rgba(255, 0, 0, 0.3) !important;
+        border-radius: 12px !important;
+        box-shadow: 0 8px 32px rgba(255, 0, 0, 0.2) !important;
+        margin: 1rem 0 !important;
     }
 
-    /* DIVISORES SUTILES */
     hr {
         border: none !important;
         height: 1px !important;
@@ -274,118 +252,19 @@ st.markdown("""
         margin: clamp(1.5rem, 4vh, 2.5rem) 0 !important;
     }
 
-    /* OCULTAR ELEMENTOS */
     [data-testid="stHeader"] { background: transparent !important; }
     footer { visibility: hidden; }
     #MainMenu { visibility: hidden; }
     
-    /* SCROLLBAR REFINADA */
-    ::-webkit-scrollbar {
-        width: 6px;
-        height: 6px;
-    }
-    ::-webkit-scrollbar-track {
-        background: rgba(255, 255, 255, 0.02);
-    }
-    ::-webkit-scrollbar-thumb {
-        background: rgba(255, 0, 0, 0.4);
-        border-radius: 3px;
-    }
-    ::-webkit-scrollbar-thumb:hover {
-        background: rgba(255, 0, 0, 0.6);
-    }
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.02); }
+    ::-webkit-scrollbar-thumb { background: rgba(255, 0, 0, 0.4); border-radius: 3px; }
 
-    /* MENSAJES ERROR/SUCCESS */
-    .stSuccess, .stError {
-        background: rgba(255, 255, 255, 0.02) !important;
-        backdrop-filter: blur(10px) !important;
-        border: 1px solid rgba(255, 0, 0, 0.3) !important;
-        border-radius: 8px !important;
-        color: #ff0000 !important;
-        font-size: 0.8rem !important;
-        font-weight: 300 !important;
-        padding: 1rem !important;
-    }
-
-    /* RESPONSIVE MOBILE PERFECTO */
     @media (max-width: 768px) {
-        .ruth-header {
-            font-size: 2.2rem !important;
-            letter-spacing: 0.6rem !important;
-            margin: 2rem 0 0.5rem 0 !important;
-        }
-        
-        .ruth-subtitle {
-            font-size: 0.45rem !important;
-            letter-spacing: 0.2rem !important;
-            margin-bottom: 2rem !important;
-        }
-        
-        .stButton>button {
-            padding: 1rem 0.5rem !important;
-            font-size: 0.55rem !important;
-            letter-spacing: 0.1rem !important;
-        }
-        
-        [data-testid="column"] {
-            padding: 0.3rem !important;
-        }
-        
-        [data-testid="stChatMessage"] {
-            padding: 1rem !important;
-            margin: 0.7rem 0 !important;
-            font-size: 0.9rem !important;
-        }
-        
-        [data-testid="stSidebar"] {
-            width: 85vw !important;
-        }
-        
-        [data-testid="stChatInput"] textarea {
-            font-size: 1rem !important;
-            padding: 1rem !important;
-        }
-        
-        [data-testid="stSidebar"] .stSelectbox > div > div {
-            padding: 0.8rem !important;
-            font-size: 0.8rem !important;
-        }
-    }
-    
-    @media (min-width: 768px) and (max-width: 1024px) {
-        .ruth-header {
-            font-size: 3.5rem !important;
-            letter-spacing: 1rem !important;
-        }
-        
-        .stButton>button {
-            font-size: 0.62rem !important;
-            padding: 1.1rem 0.7rem !important;
-        }
-    }
-    
-    @media (max-width: 480px) {
-        .ruth-header {
-            font-size: 1.8rem !important;
-            letter-spacing: 0.4rem !important;
-            margin: 1.5rem 0 0.5rem 0 !important;
-        }
-        
-        .ruth-subtitle {
-            font-size: 0.4rem !important;
-            letter-spacing: 0.15rem !important;
-        }
-        
-        .stButton>button {
-            padding: 0.9rem 0.4rem !important;
-            font-size: 0.5rem !important;
-            letter-spacing: 0.08rem !important;
-        }
-        
-        [data-testid="stChatMessage"] {
-            padding: 0.8rem !important;
-            font-size: 0.85rem !important;
-        }
+        .ruth-header { font-size: 2.2rem !important; letter-spacing: 0.6rem !important; }
+        .ruth-subtitle { font-size: 0.45rem !important; }
+        .stButton>button { padding: 1rem 0.5rem !important; font-size: 0.55rem !important; }
+        [data-testid="stSidebar"] { width: 85vw !important; }
     }
     </style>
 """, unsafe_allow_html=True)
@@ -490,9 +369,8 @@ with st.sidebar:
     try:
         res = supabase.table("chats").select("*").eq("user_email", st.session_state.user_name).order("created_at", desc=True).limit(6).execute()
         if res.data:
-            st.markdown("<p style='color: #888; font-size: 0.6rem; font-weight: 300; letter-spacing: 0.1rem; margin-bottom: 0.5rem;'>HISTORIAL</p>", unsafe_allow_html=True)
+            st.markdown("<p style='color: #888; font-size: 0.6rem; font-weight: 300; letter-spacing: 0.1rem;'>HISTORIAL</p>", unsafe_allow_html=True)
             
-            # Botón para borrar historial
             st.markdown('<div class="delete-history-btn">', unsafe_allow_html=True)
             if st.button("🗑️ BORRAR TODO"):
                 try:
@@ -516,7 +394,7 @@ with st.sidebar:
 
 # --- 5. CUERPO PRINCIPAL ---
 st.markdown('<div class="ruth-header">RUTH</div>', unsafe_allow_html=True)
-st.markdown('<div class="ruth-subtitle">UNIVERSAL BUSINESS SUITE</div>', unsafe_allow_html=True)
+st.markdown('<div class="ruth-subtitle">UNIVERSAL BUSINESS SUITE + IA VISUAL</div>', unsafe_allow_html=True)
 
 if "messages" not in st.session_state:
     st.session_state.messages = []
@@ -546,27 +424,52 @@ for i in range(8):
 
 st.divider()
 
-# Chat
+# Chat con soporte de imágenes
 for msg in st.session_state.messages:
     if "Ejecuta:" not in msg["content"]:
         av = ruth_avatar if msg["role"] == "assistant" else None
         with st.chat_message(msg["role"], avatar=av):
-            st.markdown(msg["content"])
+            # Si el mensaje contiene una URL de imagen, mostrarla
+            if msg["role"] == "assistant" and "![IMAGEN](" in msg["content"]:
+                partes = msg["content"].split("![IMAGEN](")
+                st.markdown(partes[0])
+                url_imagen = partes[1].split(")")[0]
+                st.markdown(f'<img src="{url_imagen}" class="generated-image" style="width: 100%; max-width: 600px; border-radius: 12px;">', unsafe_allow_html=True)
+                if len(partes[1].split(")")) > 1:
+                    st.markdown(partes[1].split(")", 1)[1])
+            else:
+                st.markdown(msg["content"])
 
-if prompt := st.chat_input("Mensaje"):
+if prompt := st.chat_input("Mensaje (prueba: 'genera una imagen de un gato cyberpunk')"):
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
         st.markdown(prompt)
     
     with st.chat_message("assistant", avatar=ruth_avatar):
-        sys_i = f"Eres RUTH {ESP[esp_act]} ({TON[ton_act]})."
-        c = client.chat.completions.create(
-            messages=[{"role": "system", "content": sys_i}] + st.session_state.messages[-5:],
-            model="llama-3.3-70b-versatile"
-        )
-        res = c.choices[0].message.content
-        st.markdown(res)
-        st.session_state.messages.append({"role": "assistant", "content": res})
+        # DETECTAR SI PIDE IMAGEN
+        if detectar_pedido_imagen(prompt):
+            # Generar imagen
+            imagen_url, prompt_limpio = generar_imagen(prompt)
+            
+            # Respuesta de RUTH + imagen
+            respuesta = f"✨ Imagen generada: **{prompt_limpio}**\n\n![IMAGEN]({imagen_url})\n\n*Generado con IA visual de RUTH*"
+            
+            st.markdown(f"✨ Imagen generada: **{prompt_limpio}**")
+            st.markdown(f'<img src="{imagen_url}" class="generated-image" style="width: 100%; max-width: 600px; border-radius: 12px;">', unsafe_allow_html=True)
+            st.markdown("*Generado con IA visual de RUTH*")
+            
+            st.session_state.messages.append({"role": "assistant", "content": respuesta})
+        else:
+            # Respuesta normal de texto
+            sys_i = f"Eres RUTH {ESP[esp_act]} ({TON[ton_act]})."
+            c = client.chat.completions.create(
+                messages=[{"role": "system", "content": sys_i}] + st.session_state.messages[-5:],
+                model="llama-3.3-70b-versatile"
+            )
+            res = c.choices[0].message.content
+            st.markdown(res)
+            st.session_state.messages.append({"role": "assistant", "content": res})
+        
         try:
             supabase.table("chats").insert({
                 "user_email": st.session_state.user_name,
@@ -574,3 +477,4 @@ if prompt := st.chat_input("Mensaje"):
             }).execute()
         except:
             pass
+```
