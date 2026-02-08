@@ -5,30 +5,32 @@ import os
 import datetime
 import time
 
-# --- 1. CONFIGURACIÓN Y ESTÉTICA (CSS REFORZADO) ---
+# --- 1. CONFIGURACIÓN Y ESTÉTICA PREMIUM (CSS MOBILE & DESKTOP) ---
 st.set_page_config(page_title="RUTH Pro", page_icon="●", layout="wide", initial_sidebar_state="expanded")
 
 st.markdown("""
     <style>
-    /* FONDO Y PARTÍCULAS */
+    /* FONDO CINÉTICO CON PARTÍCULAS */
     [data-testid="stAppViewContainer"], [data-testid="stSidebar"], .stSidebarContent {
         background-color: #0e1117 !important;
-        background-image: radial-gradient(circle at 50% 50%, rgba(255, 75, 75, 0.02) 0%, transparent 80%),
-                          radial-gradient(#1a1d24 1px, transparent 1px) !important;
-        background-size: 100% 100%, 30px 30px !important;
+        background-image: 
+            radial-gradient(circle at 20% 30%, rgba(255, 75, 75, 0.05) 0%, transparent 25%),
+            radial-gradient(circle at 80% 70%, rgba(255, 75, 75, 0.05) 0%, transparent 25%),
+            radial-gradient(#1a1d24 1px, transparent 1px) !important;
+        background-size: 100% 100%, 100% 100%, 30px 30px !important;
+        animation: drift 15s infinite alternate ease-in-out;
     }
+    @keyframes drift { from { background-position: 0% 0%; } to { background-position: 5% 5%; } }
 
-    /* FLECHA DE RESCATE (FIJA Y ROJA) */
+    /* FLECHA DE RESCATE ROJA FIJA */
     button[kind="headerNoContext"], [data-testid="stSidebarCollapsedControl"] {
         background-color: #ff4b4b !important; color: white !important;
         border-radius: 0 10px 10px 0 !important; left: 0 !important;
         top: 20px !important; width: 60px !important; height: 50px !important;
         display: flex !important; justify-content: center !important; 
-        z-index: 9999999 !important; box-shadow: 5px 0 15px rgba(255, 75, 75, 0.4) !important;
+        align-items: center !important; z-index: 9999999 !important;
+        box-shadow: 5px 0 15px rgba(255, 75, 75, 0.4) !important;
     }
-    
-    [data-testid="stHeader"] { background: transparent !important; }
-    footer { visibility: hidden; }
 
     /* TÍTULO NEÓN */
     @keyframes flicker {
@@ -36,17 +38,23 @@ st.markdown("""
         20%, 24%, 55% { text-shadow: none; color: #330000; }
     }
     .ruth-header { text-align: center; padding-top: 1rem; color: #ff4b4b; font-size: 5rem; animation: flicker 3s infinite alternate; font-weight: 100; letter-spacing: 1.2rem; }
-    .ruth-subtitle { text-align: center; color: #888; font-size: 0.8rem; letter-spacing: 0.3rem; margin-top: -10px; margin-bottom: 3rem; font-weight: bold;}
+    .ruth-subtitle { text-align: center; color: #888; font-size: 0.8rem; letter-spacing: 0.3rem; margin-top: -10px; margin-bottom: 2rem; font-weight: bold;}
 
-    /* BOTONES GHOST */
+    /* BOTONES GHOST MINIMALISTAS */
+    [data-testid="column"] { padding: 0px 1px !important; }
     .stButton>button { border: none !important; background-color: transparent !important; color: #aaaaaa !important; width: 100% !important; height: 40px !important; transition: 0.2s ease; text-transform: uppercase; font-size: 0.48rem !important; white-space: nowrap !important; cursor: pointer; }
     @keyframes text-flicker { 0%, 100% { color: #ff4b4b; text-shadow: 0 0 8px #ff0000; } 50% { color: #660000; text-shadow: none; } }
     .stButton>button:hover { animation: text-flicker 0.4s infinite; }
-    
-    /* INPUTS LOGIN */
-    div[data-testid="stTextInput"] label { color: #ff4b4b !important; font-size: 0.7rem !important; letter-spacing: 0.1rem !important; }
-    div[data-testid="stTextInput"] input { background-color: rgba(255, 255, 255, 0.05) !important; border: 1px solid #333 !important; color: white !important; border-radius: 8px !important; }
-    div[data-testid="stTextInput"] input:focus { border-color: #ff4b4b !important; box-shadow: 0 0 10px rgba(255, 75, 75, 0.2) !important; }
+
+    /* CUADRO DE BIENVENIDA/INSTALACIÓN */
+    .welcome-box {
+        background: rgba(255, 75, 75, 0.05); border: 1px dashed #ff4b4b;
+        padding: 15px; border-radius: 10px; margin-bottom: 20px; text-align: left;
+    }
+    .welcome-box p { font-size: 0.75rem !important; color: #ccc !important; margin: 5px 0 !important; }
+
+    header, footer { visibility: hidden; }
+    div[data-testid="stMarkdownContainer"] p { color: #e0e0e0 !important; }
     </style>
 """, unsafe_allow_html=True)
 
@@ -62,10 +70,19 @@ if "auth_mode" not in st.session_state: st.session_state.auth_mode = "login"
 
 def login_ui():
     st.markdown('<div class="ruth-header">R U T H</div>', unsafe_allow_html=True)
-    st.markdown('<div class="ruth-subtitle">SYSTEM ACCESS</div>', unsafe_allow_html=True)
+    st.markdown('<div class="ruth-subtitle">ACCESO AL SISTEMA</div>', unsafe_allow_html=True)
     
     col_l, col_c, col_r = st.columns([1, 1.5, 1])
     with col_c:
+        # AVISO DE INSTALACIÓN MÓVIL
+        st.markdown("""
+            <div class="welcome-box">
+                <p><strong>📲 INSTALA RUTH EN TU MÓVIL:</strong></p>
+                <p><strong>Android:</strong> Menú (⋮) > 'Instalar aplicación'</p>
+                <p><strong>iPhone:</strong> Compartir (↑) > 'Añadir a pantalla de inicio'</p>
+            </div>
+        """, unsafe_allow_html=True)
+
         if st.session_state.auth_mode == "login":
             st.markdown("<h3 style='color:white; text-align:center;'>ENTRAR</h3>", unsafe_allow_html=True)
             u = st.text_input("USUARIO", key="log_u")
@@ -73,9 +90,7 @@ def login_ui():
             if st.button("INICIAR SESIÓN"):
                 res = supabase.table("usuarios").select("*").eq("username", u).eq("password", p).execute()
                 if res.data:
-                    st.session_state.logged_in = True
-                    st.session_state.user_name = u
-                    st.rerun()
+                    st.session_state.logged_in = True; st.session_state.user_name = u; st.rerun()
                 else: st.error("Credenciales incorrectas.")
             if st.button("CREAR UNA CUENTA NUEVA"):
                 st.session_state.auth_mode = "signup"; st.rerun()
@@ -92,10 +107,9 @@ def login_ui():
                 st.session_state.auth_mode = "login"; st.rerun()
 
 if not st.session_state.logged_in:
-    login_ui()
-    st.stop()
+    login_ui(); st.stop()
 
-# --- 4. BARRA LATERAL (WORKSPACE) ---
+# --- 4. BARRA LATERAL (CONTROL CENTER) ---
 with st.sidebar:
     st.markdown(f"<h3 style='color: white; font-weight: 200;'>SOCIO: {st.session_state.user_name.upper()}</h3>", unsafe_allow_html=True)
     
@@ -119,9 +133,7 @@ with st.sidebar:
     try:
         res = supabase.table("chats").select("*").eq("user_email", st.session_state.user_name).order("created_at", desc=True).limit(10).execute()
         for chat in res.data:
-            tit = "VACÍO"
-            for m in chat['messages']:
-                if m['role'] == 'user': tit = m['content'][:15].upper() + "..."; break
+            tit = chat['messages'][0]['content'][:15].upper() if chat['messages'] else "VACÍO"
             if st.button(f"{tit}", key=chat['id']):
                 st.session_state.messages = chat['messages']; st.rerun()
     except: pass
@@ -132,7 +144,7 @@ st.markdown('<div class="ruth-subtitle">UNIVERSAL BUSINESS SUITE</div>', unsafe_
 
 if "messages" not in st.session_state: st.session_state.messages = []
 
-# Botones Ghost
+# Botones Ghost (8 Especialidades)
 cols = st.columns(8); labels = list(ESPECIALIDADES.keys())
 for i in range(8):
     with cols[i]:
