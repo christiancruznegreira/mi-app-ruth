@@ -4,7 +4,6 @@ from supabase import create_client, Client
 import os
 import datetime
 import time
-import hashlib
 
 # --- 1. CONFIGURACIÓN Y ESTÉTICA iOS 26 CRYSTAL ---
 st.set_page_config(page_title="RUTH Pro", page_icon="●", layout="wide", initial_sidebar_state="collapsed")
@@ -81,11 +80,6 @@ client = Groq(api_key=st.secrets["GROQ_API_KEY"].strip())
 supabase = create_client(st.secrets["SUPABASE_URL"], st.secrets["SUPABASE_KEY"])
 ruth_avatar = "logo_ruth.png" if os.path.exists("logo_ruth.png") else "●"
 
-# --- FUNCIÓN DE SEGURIDAD PARA CONTRASEÑAS ---
-def hash_password(password):
-    """Hashea la contraseña para seguridad"""
-    return hashlib.sha256(password.encode()).hexdigest()
-
 # --- 3. GESTIÓN DE ACCESO ---
 if "logged_in" not in st.session_state: st.session_state.logged_in = False
 if "user_name" not in st.session_state: st.session_state.user_name = ""
@@ -100,8 +94,7 @@ def login_ui():
             u = st.text_input("U", placeholder="USUARIO", key="l_u")
             p = st.text_input("P", type="password", placeholder="CONTRASEÑA", key="l_p")
             if st.button("ENTRAR"):
-                hashed_p = hash_password(p)
-                res = supabase.table("usuarios").select("*").eq("username", u).eq("password", hashed_p).execute()
+                res = supabase.table("usuarios").select("*").eq("username", u).eq("password", p).execute()
                 if res.data:
                     st.session_state.logged_in = True
                     st.session_state.user_name = u
@@ -116,8 +109,7 @@ def login_ui():
             np = st.text_input("NP", type="password", placeholder="NUEVA CLAVE", key="s_p")
             if st.button("REGISTRARME"):
                 try:
-                    hashed_np = hash_password(np)
-                    supabase.table("usuarios").insert({"username": nu, "password": hashed_np}).execute()
+                    supabase.table("usuarios").insert({"username": nu, "password": np}).execute()
                     st.success("Listo.")
                     time.sleep(1)
                     st.session_state.auth_mode = "login"
@@ -143,27 +135,8 @@ with st.sidebar:
         st.rerun()
     
     st.divider()
-    
-    # ✅ CORRECCIÓN: Definir diccionarios correctamente
-    ESP = {
-        "Abogada": "Abogada.",
-        "Amazon Pro": "Amazon.",
-        "Marketing": "Marketing.",
-        "Estratega": "CEO Advisor.",
-        "Médico": "Médico.",
-        "Finanzas": "Finanzas.",
-        "IA Pro": "IA Pro.",
-        "Seguridad": "Seguridad."
-    }
-    
-    TON = {
-        "Analítica": "Fría.",
-        "Sarcástica": "Cínica.",
-        "Empática": "Suave.",
-        "Motivadora": "Éxito.",
-        "Ejecutiva": "ROI.",
-        "Conspiranoica": "Oculto."
-    }
+    ESP = {"Abogada": "Abogada.", "Amazon Pro": "Amazon.", "Marketing": "Marketing.", "Estratega": "CEO Advisor.", "Médico": "Médico.", "Finanzas": "Finanzas.", "IA Pro": "IA Pro.", "Seguridad": "Seguridad."}
+    TON = {"Analítica": "Fría.", "Sarcástica": "Cínica.", "Empática": "Suave.", "Motivadora": "Éxito.", "Ejecutiva": "ROI.", "Conspiranoica": "Oculto."}
     
     esp_act = st.selectbox("ESPECIALIDAD:", list(ESP.keys()))
     ton_act = st.selectbox("PERSONALIDAD:", list(TON.keys()))  # ✅ CORREGIDO: TON en lugar de TONOS
@@ -185,23 +158,17 @@ if "messages" not in st.session_state:
     st.session_state.messages = []
 
 # Rejilla de Especialidades
-cols = st.columns(4)  # En móvil 4 columnas es el límite para que no se rompa el texto
+cols = st.columns(4) # En móvil 4 columnas es el límite para que no se rompa el texto
 labels = list(ESP.keys())
 for i in range(8):
     with cols[i % 4]:
         if st.button(labels[i].upper()):
             st.session_state.messages.append({"role": "user", "content": f"Ejecuta: {labels[i]}"})
-            sys_i = f"Eres RUTH {ESP[labels[i]]} Tono: {TON[ton_act]}"
-            c = client.chat.completions.create(
-                model="llama-3.3-70b-versatile",
-                messages=[{"role": "system", "content": sys_i}] + st.session_state.messages[-5:]
-            )
+            sys_i = f"Eres RUTH {ESP[labels[i]]} ({TON[ton_act]})."
+            c = client.chat.completions.create(model="llama-3.3-70b-versatile", messages=[{"role":"system","content":sys_i}] + st.session_state.messages[-5:])
             st.session_state.messages.append({"role": "assistant", "content": c.choices[0].message.content})
             try:
-                supabase.table("chats").insert({
-                    "user_email": st.session_state.user_name,
-                    "messages": st.session_state.messages
-                }).execute()
+                supabase.table("chats").insert({"user_email": st.session_state.user_name, "messages": st.session_state.messages}).execute()
             except:
                 pass
             st.rerun()
@@ -218,18 +185,12 @@ if prompt := st.chat_input(f"RUTH {esp_act}"):
     with st.chat_message("user"):
         st.markdown(prompt)
     with st.chat_message("assistant", avatar=ruth_avatar):
-        sys_i = f"Identidad RUTH: {ESP[esp_act]} Tono: {TON[ton_act]}"
-        c = client.chat.completions.create(
-            messages=[{"role": "system", "content": sys_i}] + st.session_state.messages[-5:],
-            model="llama-3.3-70b-versatile"
-        )
+        sys_i = f"Identidad RUTH: {ESP[esp_act]} Tono: {TON[ton_act]}."
+        c = client.chat.completions.create(messages=[{"role":"system","content": sys_i}] + st.session_state.messages[-5:], model="llama-3.3-70b-versatile")
         res = c.choices[0].message.content
         st.markdown(res)
         st.session_state.messages.append({"role": "assistant", "content": res})
         try:
-            supabase.table("chats").insert({
-                "user_email": st.session_state.user_name,
-                "messages": st.session_state.messages
-            }).execute()
+            supabase.table("chats").insert({"user_email": st.session_state.user_name, "messages": st.session_state.messages}).execute()
         except:
             pass
