@@ -5,103 +5,130 @@ import os
 import datetime
 import time
 
-# --- 1. CONFIGURACIÓN Y ESTÉTICA CYBERPUNK MINIMALISTA ---
+# --- 1. CONFIGURACIÓN Y ESTÉTICA REFINADA ---
 st.set_page_config(page_title="RUTH", page_icon="●", layout="wide", initial_sidebar_state="collapsed")
 
 st.markdown("""
     <style>
-    /* FUENTE MONOESPACIADA CYBERPUNK */
-    @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap');
+    /* FUENTES ULTRA FINAS */
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500&display=swap');
     
     * {
-        font-family: 'Space Mono', monospace !important;
+        font-family: 'Inter', -apple-system, sans-serif !important;
     }
     
-    /* FONDO NEGRO PURO */
+    /* FONDO NEGRO CON PATRÓN SUTIL */
     .stApp {
-        background: #000000 !important;
+        background-color: #000000 !important;
+        background-image: 
+            repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255, 255, 255, 0.03) 2px, rgba(255, 255, 255, 0.03) 4px),
+            repeating-linear-gradient(90deg, transparent, transparent 2px, rgba(255, 255, 255, 0.03) 2px, rgba(255, 255, 255, 0.03) 4px),
+            radial-gradient(circle at 20% 30%, rgba(40, 40, 40, 0.4) 0%, transparent 50%),
+            radial-gradient(circle at 80% 70%, rgba(30, 30, 30, 0.4) 0%, transparent 50%);
         color: #ffffff !important;
     }
     
-    /* FLECHA SIDEBAR MINIMALISTA */
+    /* FLECHA VISUAL MINIMALISTA */
     [data-testid="stSidebarCollapsedControl"] {
-        background: #ff0000 !important;
+        background: linear-gradient(135deg, #ff0000 0%, #cc0000 100%) !important;
         border: none !important;
-        border-radius: 0 8px 8px 0 !important;
-        width: 40px !important;
-        height: 40px !important;
-        top: 15px !important;
-        transition: all 0.2s ease !important;
+        border-radius: 0 6px 6px 0 !important;
+        width: 36px !important;
+        height: 36px !important;
+        top: 20px !important;
+        transition: all 0.3s ease !important;
+        box-shadow: 0 4px 12px rgba(255, 0, 0, 0.3) !important;
     }
     [data-testid="stSidebarCollapsedControl"]:hover {
-        background: #cc0000 !important;
+        background: linear-gradient(135deg, #ff3333 0%, #ff0000 100%) !important;
+        box-shadow: 0 6px 20px rgba(255, 0, 0, 0.5) !important;
+        width: 38px !important;
     }
-    [data-testid="stSidebarCollapsedControl"] svg { 
+    [data-testid="stSidebarCollapsedControl"] svg {
         fill: white !important;
+        filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
     }
 
-    /* SIDEBAR NEGRA CON BORDE ROJO */
+    /* SIDEBAR GLASSMORPHISM */
     [data-testid="stSidebar"] {
-        background: #000000 !important;
-        border-right: 1px solid #ff0000 !important;
+        background: rgba(10, 10, 10, 0.85) !important;
+        backdrop-filter: blur(20px) saturate(180%) !important;
+        -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
+        border-right: 1px solid rgba(255, 0, 0, 0.2) !important;
+        box-shadow: 4px 0 24px rgba(0, 0, 0, 0.5) !important;
     }
     
-    /* ELEMENTOS SIDEBAR */
+    /* USUARIO EN SIDEBAR */
     [data-testid="stSidebar"] h3 {
         color: #ff0000 !important;
-        font-weight: 700 !important;
-        letter-spacing: 0.5rem !important;
+        font-weight: 200 !important;
+        letter-spacing: 0.4rem !important;
         text-align: center !important;
-        margin: 2rem 0 !important;
-        font-size: 1.2rem !important;
+        margin: 2rem 0 1.5rem 0 !important;
+        font-size: 1.1rem !important;
     }
 
-    /* SELECTORES MINIMALISTAS */
+    /* SELECTORES GLASS */
     [data-testid="stSidebar"] .stSelectbox label {
-        color: #666 !important;
-        font-size: 0.65rem !important;
-        font-weight: 400 !important;
-        letter-spacing: 0.2rem !important;
+        color: #888 !important;
+        font-size: 0.6rem !important;
+        font-weight: 300 !important;
+        letter-spacing: 0.15rem !important;
         text-transform: uppercase !important;
+        margin-bottom: 0.5rem !important;
     }
     [data-testid="stSidebar"] .stSelectbox > div > div {
-        background: transparent !important;
-        border: 1px solid #333 !important;
-        border-radius: 0 !important;
+        background: rgba(255, 255, 255, 0.03) !important;
+        backdrop-filter: blur(10px) !important;
+        border: 1px solid rgba(255, 255, 255, 0.08) !important;
+        border-radius: 8px !important;
         color: #fff !important;
-        padding: 0.6rem !important;
-        font-size: 0.8rem !important;
+        padding: 0.7rem !important;
+        font-size: 0.75rem !important;
+        font-weight: 300 !important;
+        transition: all 0.3s ease !important;
     }
     [data-testid="stSidebar"] .stSelectbox > div > div:hover {
-        border-color: #ff0000 !important;
+        background: rgba(255, 255, 255, 0.05) !important;
+        border-color: rgba(255, 0, 0, 0.3) !important;
     }
 
-    /* MENSAJES MINIMALISTAS */
+    /* MENSAJES GLASS */
     [data-testid="stChatMessage"] {
-        background: transparent !important;
-        border: 1px solid #1a1a1a !important;
-        border-left: 3px solid #ff0000 !important;
-        border-radius: 0 !important;
-        padding: 1rem !important;
+        background: rgba(255, 255, 255, 0.02) !important;
+        backdrop-filter: blur(15px) !important;
+        -webkit-backdrop-filter: blur(15px) !important;
+        border: 1px solid rgba(255, 255, 255, 0.05) !important;
+        border-left: 2px solid #ff0000 !important;
+        border-radius: 12px !important;
+        padding: 1.2rem !important;
         margin: 1rem 0 !important;
+        transition: all 0.3s ease !important;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2) !important;
     }
     [data-testid="stChatMessage"]:hover {
+        background: rgba(255, 255, 255, 0.04) !important;
         border-left-color: #ff3333 !important;
-        background: #0a0a0a !important;
+        transform: translateX(4px) !important;
+        box-shadow: 0 6px 24px rgba(0, 0, 0, 0.3) !important;
+    }
+    [data-testid="stChatMessage"] p {
+        font-weight: 300 !important;
+        line-height: 1.6 !important;
     }
 
-    /* TÍTULO NEÓN PARPADEO MATRIZ */
+    /* TÍTULO NEÓN ULTRA FINO */
     @keyframes neon-flicker {
         0%, 19.999%, 22%, 62.999%, 64%, 64.999%, 70%, 100% {
             opacity: 1;
             text-shadow: 
-                0 0 10px #ff0000,
-                0 0 20px #ff0000,
-                0 0 40px #ff0000,
-                0 0 80px #ff0000;
+                0 0 10px rgba(255, 0, 0, 0.8),
+                0 0 20px rgba(255, 0, 0, 0.6),
+                0 0 40px rgba(255, 0, 0, 0.4),
+                0 0 60px rgba(255, 0, 0, 0.2);
         }
         20%, 21.999%, 63%, 63.999%, 65%, 69.999% {
-            opacity: 0.4;
+            opacity: 0.3;
             text-shadow: none;
         }
     }
@@ -110,95 +137,116 @@ st.markdown("""
         text-align: center;
         color: #ff0000;
         font-size: clamp(2.5rem, 8vw, 5rem);
-        font-weight: 700;
-        letter-spacing: clamp(0.5rem, 3vw, 1.5rem);
-        margin: clamp(1rem, 4vh, 3rem) 0 clamp(0.5rem, 2vh, 1rem) 0;
+        font-weight: 100 !important;
+        letter-spacing: clamp(0.8rem, 3vw, 2rem);
+        margin: clamp(1.5rem, 5vh, 3rem) 0 clamp(0.5rem, 2vh, 1rem) 0;
         animation: neon-flicker 5s infinite;
         line-height: 1;
+        filter: drop-shadow(0 0 20px rgba(255, 0, 0, 0.5));
     }
     
     .ruth-subtitle {
         text-align: center;
         color: #666;
-        font-size: clamp(0.45rem, 1.2vw, 0.6rem);
-        letter-spacing: clamp(0.2rem, 1vw, 0.4rem);
-        margin-bottom: clamp(1.5rem, 4vh, 3rem);
-        font-weight: 400;
+        font-size: clamp(0.5rem, 1.2vw, 0.65rem);
+        font-weight: 200 !important;
+        letter-spacing: clamp(0.3rem, 1vw, 0.5rem);
+        margin-bottom: clamp(2rem, 5vh, 3rem);
         text-transform: uppercase;
     }
 
-    /* BOTONES ULTRA MINIMALISTAS */
+    /* BOTONES GLASS REFINADOS */
     .stButton>button {
-        background: transparent !important;
-        border: 1px solid #333 !important;
-        border-radius: 0 !important;
+        background: rgba(255, 255, 255, 0.02) !important;
+        backdrop-filter: blur(10px) !important;
+        -webkit-backdrop-filter: blur(10px) !important;
+        border: 1px solid rgba(255, 255, 255, 0.08) !important;
+        border-radius: 10px !important;
         color: #999 !important;
-        padding: clamp(0.8rem, 2.5vw, 1rem) clamp(0.5rem, 2vw, 0.8rem) !important;
-        font-size: clamp(0.5rem, 1.5vw, 0.65rem) !important;
-        font-weight: 400 !important;
-        letter-spacing: 0.15rem !important;
+        padding: clamp(1rem, 2.5vw, 1.2rem) clamp(0.6rem, 2vw, 0.8rem) !important;
+        font-size: clamp(0.55rem, 1.5vw, 0.7rem) !important;
+        font-weight: 300 !important;
+        letter-spacing: 0.2rem !important;
         text-transform: uppercase !important;
-        transition: all 0.2s ease !important;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important;
         width: 100% !important;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2) !important;
     }
     
     .stButton>button:hover {
-        background: transparent !important;
-        border-color: #ff0000 !important;
+        background: rgba(255, 0, 0, 0.05) !important;
+        border-color: rgba(255, 0, 0, 0.3) !important;
         color: #ff0000 !important;
+        transform: translateY(-2px) !important;
+        box-shadow: 0 6px 20px rgba(255, 0, 0, 0.2) !important;
     }
     
     .stButton>button:active {
-        background: rgba(255, 0, 0, 0.1) !important;
+        transform: translateY(0px) !important;
+        box-shadow: 0 2px 8px rgba(255, 0, 0, 0.3) !important;
     }
 
     /* BOTONES SIDEBAR */
     [data-testid="stSidebar"] .stButton>button {
-        margin: 0.3rem 0 !important;
-        padding: 0.7rem !important;
+        padding: 0.8rem !important;
         font-size: 0.65rem !important;
+        margin: 0.4rem 0 !important;
+        font-weight: 300 !important;
     }
 
-    /* INPUT CHAT MINIMALISTA */
+    /* INPUT CHAT GLASS */
     [data-testid="stChatInput"] {
-        background: transparent !important;
-        border: 1px solid #333 !important;
-        border-radius: 0 !important;
+        background: rgba(255, 255, 255, 0.02) !important;
+        backdrop-filter: blur(15px) !important;
+        -webkit-backdrop-filter: blur(15px) !important;
+        border: 1px solid rgba(255, 255, 255, 0.08) !important;
+        border-radius: 16px !important;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2) !important;
     }
     [data-testid="stChatInput"]:focus-within {
-        border-color: #ff0000 !important;
+        border-color: rgba(255, 0, 0, 0.3) !important;
+        box-shadow: 0 4px 20px rgba(255, 0, 0, 0.15) !important;
     }
     [data-testid="stChatInput"] textarea {
         color: white !important;
-        font-size: clamp(0.8rem, 2vw, 0.9rem) !important;
+        font-size: clamp(0.85rem, 2vw, 0.95rem) !important;
+        font-weight: 300 !important;
     }
 
-    /* LOGIN MINIMALISTA */
+    /* LOGIN GLASS */
     div[data-testid="stTextInput"] input {
-        background: transparent !important;
-        border: 1px solid #333 !important;
-        border-radius: 0 !important;
+        background: rgba(255, 255, 255, 0.03) !important;
+        backdrop-filter: blur(10px) !important;
+        border: 1px solid rgba(255, 255, 255, 0.08) !important;
+        border-radius: 12px !important;
         color: #fff !important;
-        padding: 1rem !important;
+        padding: 1.2rem !important;
         text-align: center !important;
         font-size: 0.9rem !important;
+        font-weight: 300 !important;
         letter-spacing: 0.2rem !important;
+        transition: all 0.3s ease !important;
     }
     div[data-testid="stTextInput"] input:focus {
-        border-color: #ff0000 !important;
+        background: rgba(255, 255, 255, 0.05) !important;
+        border-color: rgba(255, 0, 0, 0.4) !important;
         outline: none !important;
+        box-shadow: 0 0 20px rgba(255, 0, 0, 0.2) !important;
+    }
+    div[data-testid="stTextInput"] input::placeholder {
+        color: #666 !important;
+        font-weight: 200 !important;
     }
     div[data-testid="stTextInput"] label { 
         display: none !important; 
     }
 
-    /* DIVISORES ROJOS */
+    /* DIVISORES SUTILES */
     hr {
         border: none !important;
         height: 1px !important;
-        background: #ff0000 !important;
-        margin: clamp(1rem, 3vh, 2rem) 0 !important;
-        opacity: 0.3;
+        background: linear-gradient(90deg, transparent, rgba(255, 0, 0, 0.3), transparent) !important;
+        margin: clamp(1.5rem, 4vh, 2.5rem) 0 !important;
     }
 
     /* OCULTAR ELEMENTOS */
@@ -206,36 +254,94 @@ st.markdown("""
     footer { visibility: hidden; }
     #MainMenu { visibility: hidden; }
     
-    /* SCROLLBAR ROJA */
+    /* SCROLLBAR REFINADA */
     ::-webkit-scrollbar {
         width: 6px;
         height: 6px;
     }
     ::-webkit-scrollbar-track {
-        background: #0a0a0a;
+        background: rgba(255, 255, 255, 0.02);
     }
     ::-webkit-scrollbar-thumb {
-        background: #ff0000;
+        background: rgba(255, 0, 0, 0.4);
+        border-radius: 3px;
     }
     ::-webkit-scrollbar-thumb:hover {
-        background: #cc0000;
+        background: rgba(255, 0, 0, 0.6);
     }
 
-    /* MENSAJES DE ERROR/SUCCESS */
+    /* MENSAJES ERROR/SUCCESS */
     .stSuccess, .stError {
-        background: transparent !important;
-        border: 1px solid #ff0000 !important;
-        border-radius: 0 !important;
+        background: rgba(255, 255, 255, 0.02) !important;
+        backdrop-filter: blur(10px) !important;
+        border: 1px solid rgba(255, 0, 0, 0.3) !important;
+        border-radius: 8px !important;
         color: #ff0000 !important;
         font-size: 0.8rem !important;
-        padding: 0.8rem !important;
+        font-weight: 300 !important;
+        padding: 1rem !important;
     }
 
     /* RESPONSIVE MOBILE PERFECTO */
     @media (max-width: 768px) {
-        /* Título más pequeño en móvil */
         .ruth-header {
-            font-size: 2rem !important;
+            font-size: 2.2rem !important;
+            letter-spacing: 0.6rem !important;
+            margin: 2rem 0 0.5rem 0 !important;
+        }
+        
+        .ruth-subtitle {
+            font-size: 0.45rem !important;
+            letter-spacing: 0.2rem !important;
+            margin-bottom: 2rem !important;
+        }
+        
+        .stButton>button {
+            padding: 1rem 0.5rem !important;
+            font-size: 0.55rem !important;
+            letter-spacing: 0.1rem !important;
+        }
+        
+        [data-testid="column"] {
+            padding: 0.3rem !important;
+        }
+        
+        [data-testid="stChatMessage"] {
+            padding: 1rem !important;
+            margin: 0.7rem 0 !important;
+            font-size: 0.9rem !important;
+        }
+        
+        [data-testid="stSidebar"] {
+            width: 85vw !important;
+        }
+        
+        [data-testid="stChatInput"] textarea {
+            font-size: 1rem !important;
+            padding: 1rem !important;
+        }
+        
+        [data-testid="stSidebar"] .stSelectbox > div > div {
+            padding: 0.8rem !important;
+            font-size: 0.8rem !important;
+        }
+    }
+    
+    @media (min-width: 768px) and (max-width: 1024px) {
+        .ruth-header {
+            font-size: 3.5rem !important;
+            letter-spacing: 1rem !important;
+        }
+        
+        .stButton>button {
+            font-size: 0.62rem !important;
+            padding: 1.1rem 0.7rem !important;
+        }
+    }
+    
+    @media (max-width: 480px) {
+        .ruth-header {
+            font-size: 1.8rem !important;
             letter-spacing: 0.4rem !important;
             margin: 1.5rem 0 0.5rem 0 !important;
         }
@@ -243,81 +349,17 @@ st.markdown("""
         .ruth-subtitle {
             font-size: 0.4rem !important;
             letter-spacing: 0.15rem !important;
-            margin-bottom: 1.5rem !important;
         }
         
-        /* Botones más compactos */
         .stButton>button {
-            padding: 0.8rem 0.3rem !important;
+            padding: 0.9rem 0.4rem !important;
             font-size: 0.5rem !important;
             letter-spacing: 0.08rem !important;
         }
         
-        /* Grid de 2 columnas en móvil */
-        [data-testid="column"] {
-            padding: 0.2rem !important;
-        }
-        
-        /* Mensajes más compactos */
         [data-testid="stChatMessage"] {
             padding: 0.8rem !important;
-            margin: 0.5rem 0 !important;
             font-size: 0.85rem !important;
-        }
-        
-        /* Sidebar más estrecha */
-        [data-testid="stSidebar"] {
-            width: 85vw !important;
-        }
-        
-        /* Input más grande para touch */
-        [data-testid="stChatInput"] textarea {
-            font-size: 1rem !important;
-            padding: 0.8rem !important;
-        }
-        
-        /* Selectores más grandes */
-        [data-testid="stSidebar"] .stSelectbox > div > div {
-            padding: 0.8rem !important;
-            font-size: 0.85rem !important;
-        }
-    }
-    
-    /* TABLETS (768px - 1024px) */
-    @media (min-width: 768px) and (max-width: 1024px) {
-        .ruth-header {
-            font-size: 3rem !important;
-            letter-spacing: 0.6rem !important;
-        }
-        
-        .stButton>button {
-            font-size: 0.58rem !important;
-            padding: 0.9rem 0.6rem !important;
-        }
-    }
-    
-    /* PANTALLAS PEQUEÑAS (<480px) */
-    @media (max-width: 480px) {
-        .ruth-header {
-            font-size: 1.8rem !important;
-            letter-spacing: 0.3rem !important;
-            margin: 1rem 0 0.5rem 0 !important;
-        }
-        
-        .ruth-subtitle {
-            font-size: 0.35rem !important;
-            letter-spacing: 0.1rem !important;
-        }
-        
-        .stButton>button {
-            padding: 0.7rem 0.2rem !important;
-            font-size: 0.45rem !important;
-            letter-spacing: 0.05rem !important;
-        }
-        
-        [data-testid="stChatMessage"] {
-            padding: 0.6rem !important;
-            font-size: 0.8rem !important;
         }
     }
     </style>
@@ -337,7 +379,7 @@ def login_ui():
     st.markdown('<div class="ruth-header">RUTH</div>', unsafe_allow_html=True)
     st.markdown('<div class="ruth-subtitle">UNIVERSAL BUSINESS SUITE</div>', unsafe_allow_html=True)
     
-    col_l, col_c, col_r = st.columns([0.2, 2, 0.2])
+    col_l, col_c, col_r = st.columns([0.25, 2, 0.25])
     with col_c:
         if st.session_state.auth_mode == "login":
             u = st.text_input("U", placeholder="USUARIO", key="l_u")
@@ -351,7 +393,7 @@ def login_ui():
                     st.session_state.user_name = u
                     st.rerun()
                 else:
-                    st.error("ACCESO DENEGADO")
+                    st.error("Acceso denegado")
             
             if st.button("CREAR CUENTA"):
                 st.session_state.auth_mode = "signup"
@@ -364,12 +406,12 @@ def login_ui():
             if st.button("REGISTRAR"):
                 try:
                     supabase.table("usuarios").insert({"username": nu, "password": np}).execute()
-                    st.success("CUENTA CREADA")
+                    st.success("Cuenta creada")
                     time.sleep(1)
                     st.session_state.auth_mode = "login"
                     st.rerun()
                 except:
-                    st.error("USUARIO EXISTENTE")
+                    st.error("Usuario existente")
             
             if st.button("VOLVER"):
                 st.session_state.auth_mode = "login"
@@ -423,9 +465,9 @@ with st.sidebar:
     try:
         res = supabase.table("chats").select("*").eq("user_email", st.session_state.user_name).order("created_at", desc=True).limit(6).execute()
         if res.data:
-            st.markdown("<p style='color: #666; font-size: 0.6rem; letter-spacing: 0.1rem; margin-bottom: 0.5rem;'>HISTORIAL</p>", unsafe_allow_html=True)
+            st.markdown("<p style='color: #888; font-size: 0.6rem; font-weight: 300; letter-spacing: 0.1rem; margin-bottom: 0.5rem;'>HISTORIAL</p>", unsafe_allow_html=True)
             for chat in res.data:
-                tit = chat['messages'][0]['content'][:15].upper() if chat['messages'] else "VACÍO"
+                tit = chat['messages'][0]['content'][:16].upper() if chat['messages'] else "VACÍO"
                 if st.button(f"{tit}...", key=chat['id']):
                     st.session_state.messages = chat['messages']
                     st.rerun()
@@ -439,7 +481,7 @@ st.markdown('<div class="ruth-subtitle">UNIVERSAL BUSINESS SUITE</div>', unsafe_
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# Grid responsive: 4 columnas desktop, 2 móvil
+# Grid responsive
 cols = st.columns(4)
 labels = list(ESP.keys())
 
@@ -471,7 +513,7 @@ for msg in st.session_state.messages:
         with st.chat_message(msg["role"], avatar=av):
             st.markdown(msg["content"])
 
-if prompt := st.chat_input("MENSAJE"):
+if prompt := st.chat_input("Mensaje"):
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
         st.markdown(prompt)
