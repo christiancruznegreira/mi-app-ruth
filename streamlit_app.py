@@ -8,7 +8,6 @@ import urllib.parse
 
 # --- FUNCIÓN PARA DETECTAR Y GENERAR IMÁGENES ---
 def detectar_pedido_imagen(texto):
-    """Detecta si el usuario pide generar una imagen"""
     palabras_clave = [
         'genera una imagen', 'crea una imagen', 'genera un', 'crea un',
         'muéstrame', 'dibuja', 'diseña', 'imagen de', 'foto de',
@@ -18,39 +17,26 @@ def detectar_pedido_imagen(texto):
     return any(palabra in texto_lower for palabra in palabras_clave)
 
 def generar_imagen(prompt_texto):
-    """
-    Genera una URL de imagen usando Pollinations.ai (GRATIS)
-    No requiere API key, es completamente gratuito
-    """
-    # Limpiar el prompt (quitar palabras de comando)
     prompt_limpio = prompt_texto.lower()
     for palabra in ['genera una imagen de', 'crea una imagen de', 'genera un', 'crea un', 
                     'muéstrame', 'dibuja', 'diseña', 'imagen de', 'foto de', 'logo de']:
         prompt_limpio = prompt_limpio.replace(palabra, '')
     
     prompt_limpio = prompt_limpio.strip()
-    
-    # Codificar el prompt para URL
     prompt_encoded = urllib.parse.quote(prompt_limpio)
-    
-    # URL de Pollinations.ai (GRATIS, sin API key)
     imagen_url = f"https://image.pollinations.ai/prompt/{prompt_encoded}?width=1024&height=1024&nologo=true"
     
     return imagen_url, prompt_limpio
 
-# --- 1. CONFIGURACIÓN Y ESTÉTICA REFINADA ---
+# --- CONFIGURACIÓN ---
 st.set_page_config(page_title="RUTH", page_icon="●", layout="wide", initial_sidebar_state="collapsed")
 
 st.markdown("""
     <style>
-    /* FUENTES ULTRA FINAS */
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500&display=swap');
     
-    * {
-        font-family: 'Inter', -apple-system, sans-serif !important;
-    }
+    * { font-family: 'Inter', -apple-system, sans-serif !important; }
     
-    /* FONDO NEGRO CON PATRÓN SUTIL */
     .stApp {
         background-color: #000000 !important;
         background-image: 
@@ -61,7 +47,6 @@ st.markdown("""
         color: #ffffff !important;
     }
     
-    /* FLECHA VISUAL REAL */
     [data-testid="stSidebarCollapsedControl"] {
         background: linear-gradient(135deg, #ff0000 0%, #cc0000 100%) !important;
         border: none !important;
@@ -69,12 +54,7 @@ st.markdown("""
         width: 36px !important;
         height: 36px !important;
         top: 20px !important;
-        transition: all 0.3s ease !important;
         box-shadow: 0 4px 12px rgba(255, 0, 0, 0.3) !important;
-    }
-    [data-testid="stSidebarCollapsedControl"]:hover {
-        background: linear-gradient(135deg, #ff3333 0%, #ff0000 100%) !important;
-        box-shadow: 0 6px 20px rgba(255, 0, 0, 0.5) !important;
     }
     [data-testid="stSidebarCollapsedControl"] svg {
         fill: white !important;
@@ -82,13 +62,10 @@ st.markdown("""
         height: 20px !important;
     }
 
-    /* SIDEBAR GLASSMORPHISM */
     [data-testid="stSidebar"] {
         background: rgba(10, 10, 10, 0.85) !important;
         backdrop-filter: blur(20px) saturate(180%) !important;
-        -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
         border-right: 1px solid rgba(255, 0, 0, 0.2) !important;
-        box-shadow: 4px 0 24px rgba(0, 0, 0, 0.5) !important;
     }
     
     [data-testid="stSidebar"] h3 {
@@ -97,10 +74,8 @@ st.markdown("""
         letter-spacing: 0.4rem !important;
         text-align: center !important;
         margin: 2rem 0 1.5rem 0 !important;
-        font-size: 1.1rem !important;
     }
 
-    /* SELECTORES GLASS */
     [data-testid="stSidebar"] .stSelectbox label {
         color: #888 !important;
         font-size: 0.6rem !important;
@@ -115,11 +90,8 @@ st.markdown("""
         border-radius: 8px !important;
         color: #fff !important;
         padding: 0.7rem !important;
-        font-size: 0.75rem !important;
-        font-weight: 300 !important;
     }
 
-    /* MENSAJES GLASS */
     [data-testid="stChatMessage"] {
         background: rgba(255, 255, 255, 0.02) !important;
         backdrop-filter: blur(15px) !important;
@@ -128,22 +100,12 @@ st.markdown("""
         border-radius: 12px !important;
         padding: 1.2rem !important;
         margin: 1rem 0 !important;
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2) !important;
-    }
-    [data-testid="stChatMessage"]:hover {
-        background: rgba(255, 255, 255, 0.04) !important;
-        border-left-color: #ff3333 !important;
-        transform: translateX(4px) !important;
     }
 
-    /* TÍTULO NEÓN */
     @keyframes neon-flicker {
         0%, 19.999%, 22%, 62.999%, 64%, 64.999%, 70%, 100% {
             opacity: 1;
-            text-shadow: 
-                0 0 10px rgba(255, 0, 0, 0.8),
-                0 0 20px rgba(255, 0, 0, 0.6),
-                0 0 40px rgba(255, 0, 0, 0.4);
+            text-shadow: 0 0 10px rgba(255, 0, 0, 0.8), 0 0 20px rgba(255, 0, 0, 0.6), 0 0 40px rgba(255, 0, 0, 0.4);
         }
         20%, 21.999%, 63%, 63.999%, 65%, 69.999% {
             opacity: 0.3;
@@ -171,7 +133,6 @@ st.markdown("""
         text-transform: uppercase;
     }
 
-    /* BOTONES GLASS */
     .stButton>button {
         background: rgba(255, 255, 255, 0.02) !important;
         backdrop-filter: blur(10px) !important;
@@ -183,7 +144,6 @@ st.markdown("""
         font-weight: 300 !important;
         letter-spacing: 0.2rem !important;
         text-transform: uppercase !important;
-        transition: all 0.4s ease !important;
         width: 100% !important;
     }
     
@@ -206,7 +166,6 @@ st.markdown("""
         color: #ff0000 !important;
     }
 
-    /* INPUT CHAT */
     [data-testid="stChatInput"] {
         background: rgba(255, 255, 255, 0.02) !important;
         backdrop-filter: blur(15px) !important;
@@ -215,11 +174,9 @@ st.markdown("""
     }
     [data-testid="stChatInput"] textarea {
         color: white !important;
-        font-size: clamp(0.85rem, 2vw, 0.95rem) !important;
         font-weight: 300 !important;
     }
 
-    /* LOGIN */
     div[data-testid="stTextInput"] input {
         background: rgba(255, 255, 255, 0.03) !important;
         backdrop-filter: blur(10px) !important;
@@ -233,11 +190,9 @@ st.markdown("""
     }
     div[data-testid="stTextInput"] input:focus {
         border-color: rgba(255, 0, 0, 0.4) !important;
-        box-shadow: 0 0 20px rgba(255, 0, 0, 0.2) !important;
     }
     div[data-testid="stTextInput"] label { display: none !important; }
 
-    /* IMAGEN GENERADA - ESTILO GLASS */
     .generated-image {
         border: 2px solid rgba(255, 0, 0, 0.3) !important;
         border-radius: 12px !important;
@@ -249,7 +204,7 @@ st.markdown("""
         border: none !important;
         height: 1px !important;
         background: linear-gradient(90deg, transparent, rgba(255, 0, 0, 0.3), transparent) !important;
-        margin: clamp(1.5rem, 4vh, 2.5rem) 0 !important;
+        margin: 2rem 0 !important;
     }
 
     [data-testid="stHeader"] { background: transparent !important; }
@@ -262,22 +217,23 @@ st.markdown("""
 
     @media (max-width: 768px) {
         .ruth-header { font-size: 2.2rem !important; letter-spacing: 0.6rem !important; }
-        .ruth-subtitle { font-size: 0.45rem !important; }
-        .stButton>button { padding: 1rem 0.5rem !important; font-size: 0.55rem !important; }
         [data-testid="stSidebar"] { width: 85vw !important; }
     }
     </style>
 """, unsafe_allow_html=True)
 
-# --- 2. CONEXIONES ---
+# --- CONEXIONES ---
 client = Groq(api_key=st.secrets["GROQ_API_KEY"].strip())
 supabase = create_client(st.secrets["SUPABASE_URL"], st.secrets["SUPABASE_KEY"])
 ruth_avatar = "logo_ruth.png" if os.path.exists("logo_ruth.png") else "●"
 
-# --- 3. GESTIÓN DE ACCESO ---
-if "logged_in" not in st.session_state: st.session_state.logged_in = False
-if "user_name" not in st.session_state: st.session_state.user_name = ""
-if "auth_mode" not in st.session_state: st.session_state.auth_mode = "login"
+# --- GESTIÓN DE ACCESO ---
+if "logged_in" not in st.session_state: 
+    st.session_state.logged_in = False
+if "user_name" not in st.session_state: 
+    st.session_state.user_name = ""
+if "auth_mode" not in st.session_state: 
+    st.session_state.auth_mode = "login"
 
 def login_ui():
     st.markdown('<div class="ruth-header">RUTH</div>', unsafe_allow_html=True)
@@ -325,7 +281,7 @@ if not st.session_state.logged_in:
     login_ui()
     st.stop()
 
-# --- 4. BARRA LATERAL ---
+# --- BARRA LATERAL ---
 with st.sidebar:
     st.markdown(f"<h3>{st.session_state.user_name.upper()}</h3>", unsafe_allow_html=True)
     
@@ -369,7 +325,7 @@ with st.sidebar:
     try:
         res = supabase.table("chats").select("*").eq("user_email", st.session_state.user_name).order("created_at", desc=True).limit(6).execute()
         if res.data:
-            st.markdown("<p style='color: #888; font-size: 0.6rem; font-weight: 300; letter-spacing: 0.1rem;'>HISTORIAL</p>", unsafe_allow_html=True)
+            st.markdown("<p style='color: #888; font-size: 0.6rem; font-weight: 300;'>HISTORIAL</p>", unsafe_allow_html=True)
             
             st.markdown('<div class="delete-history-btn">', unsafe_allow_html=True)
             if st.button("🗑️ BORRAR TODO"):
@@ -392,14 +348,13 @@ with st.sidebar:
     except:
         pass
 
-# --- 5. CUERPO PRINCIPAL ---
+# --- CUERPO PRINCIPAL ---
 st.markdown('<div class="ruth-header">RUTH</div>', unsafe_allow_html=True)
 st.markdown('<div class="ruth-subtitle">UNIVERSAL BUSINESS SUITE + IA VISUAL</div>', unsafe_allow_html=True)
 
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# Grid responsive
 cols = st.columns(4)
 labels = list(ESP.keys())
 
@@ -424,12 +379,10 @@ for i in range(8):
 
 st.divider()
 
-# Chat con soporte de imágenes
 for msg in st.session_state.messages:
     if "Ejecuta:" not in msg["content"]:
         av = ruth_avatar if msg["role"] == "assistant" else None
         with st.chat_message(msg["role"], avatar=av):
-            # Si el mensaje contiene una URL de imagen, mostrarla
             if msg["role"] == "assistant" and "![IMAGEN](" in msg["content"]:
                 partes = msg["content"].split("![IMAGEN](")
                 st.markdown(partes[0])
@@ -440,18 +393,14 @@ for msg in st.session_state.messages:
             else:
                 st.markdown(msg["content"])
 
-if prompt := st.chat_input("Mensaje (prueba: 'genera una imagen de un gato cyberpunk')"):
+if prompt := st.chat_input("Mensaje"):
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
         st.markdown(prompt)
     
     with st.chat_message("assistant", avatar=ruth_avatar):
-        # DETECTAR SI PIDE IMAGEN
         if detectar_pedido_imagen(prompt):
-            # Generar imagen
             imagen_url, prompt_limpio = generar_imagen(prompt)
-            
-            # Respuesta de RUTH + imagen
             respuesta = f"✨ Imagen generada: **{prompt_limpio}**\n\n![IMAGEN]({imagen_url})\n\n*Generado con IA visual de RUTH*"
             
             st.markdown(f"✨ Imagen generada: **{prompt_limpio}**")
@@ -460,7 +409,6 @@ if prompt := st.chat_input("Mensaje (prueba: 'genera una imagen de un gato cyber
             
             st.session_state.messages.append({"role": "assistant", "content": respuesta})
         else:
-            # Respuesta normal de texto
             sys_i = f"Eres RUTH {ESP[esp_act]} ({TON[ton_act]})."
             c = client.chat.completions.create(
                 messages=[{"role": "system", "content": sys_i}] + st.session_state.messages[-5:],
@@ -477,4 +425,3 @@ if prompt := st.chat_input("Mensaje (prueba: 'genera una imagen de un gato cyber
             }).execute()
         except:
             pass
-```
