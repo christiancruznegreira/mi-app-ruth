@@ -28,7 +28,7 @@ st.markdown("""
         color: #ffffff !important;
     }
     
-    /* FLECHA VISUAL MINIMALISTA */
+    /* FLECHA VISUAL REAL (NO TEXTO) */
     [data-testid="stSidebarCollapsedControl"] {
         background: linear-gradient(135deg, #ff0000 0%, #cc0000 100%) !important;
         border: none !important;
@@ -38,15 +38,29 @@ st.markdown("""
         top: 20px !important;
         transition: all 0.3s ease !important;
         box-shadow: 0 4px 12px rgba(255, 0, 0, 0.3) !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
     }
     [data-testid="stSidebarCollapsedControl"]:hover {
         background: linear-gradient(135deg, #ff3333 0%, #ff0000 100%) !important;
         box-shadow: 0 6px 20px rgba(255, 0, 0, 0.5) !important;
         width: 38px !important;
     }
+    
+    /* HACER LA FLECHA MÁS VISIBLE */
     [data-testid="stSidebarCollapsedControl"] svg {
         fill: white !important;
-        filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+        width: 20px !important;
+        height: 20px !important;
+        filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5)) !important;
+    }
+    
+    /* OCULTAR CUALQUIER TEXTO DENTRO DE LA FLECHA */
+    [data-testid="stSidebarCollapsedControl"] span,
+    [data-testid="stSidebarCollapsedControl"] p,
+    [data-testid="stSidebarCollapsedControl"] div:not([data-testid]) {
+        display: none !important;
     }
 
     /* SIDEBAR GLASSMORPHISM */
@@ -192,6 +206,17 @@ st.markdown("""
         font-size: 0.65rem !important;
         margin: 0.4rem 0 !important;
         font-weight: 300 !important;
+    }
+    
+    /* BOTÓN BORRAR HISTORIAL (ROJO) */
+    .delete-history-btn button {
+        background: rgba(255, 0, 0, 0.1) !important;
+        border: 1px solid rgba(255, 0, 0, 0.3) !important;
+        color: #ff0000 !important;
+    }
+    .delete-history-btn button:hover {
+        background: rgba(255, 0, 0, 0.2) !important;
+        border-color: rgba(255, 0, 0, 0.5) !important;
     }
 
     /* INPUT CHAT GLASS */
@@ -466,6 +491,21 @@ with st.sidebar:
         res = supabase.table("chats").select("*").eq("user_email", st.session_state.user_name).order("created_at", desc=True).limit(6).execute()
         if res.data:
             st.markdown("<p style='color: #888; font-size: 0.6rem; font-weight: 300; letter-spacing: 0.1rem; margin-bottom: 0.5rem;'>HISTORIAL</p>", unsafe_allow_html=True)
+            
+            # Botón para borrar historial
+            st.markdown('<div class="delete-history-btn">', unsafe_allow_html=True)
+            if st.button("🗑️ BORRAR TODO"):
+                try:
+                    supabase.table("chats").delete().eq("user_email", st.session_state.user_name).execute()
+                    st.success("Historial eliminado")
+                    time.sleep(1)
+                    st.rerun()
+                except:
+                    st.error("Error al borrar")
+            st.markdown('</div>', unsafe_allow_html=True)
+            
+            st.markdown("<br>", unsafe_allow_html=True)
+            
             for chat in res.data:
                 tit = chat['messages'][0]['content'][:16].upper() if chat['messages'] else "VACÍO"
                 if st.button(f"{tit}...", key=chat['id']):
