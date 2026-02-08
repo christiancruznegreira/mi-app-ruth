@@ -6,6 +6,50 @@ import datetime
 import time
 import urllib.parse
 
+# ========================================
+# 🤖 CONFIGURACIÓN DE MODELOS IA
+# ========================================
+# AQUÍ AÑADES NUEVOS MODELOS CUANDO SALGAN
+MODELOS_DISPONIBLES = {
+    "Llama 3.3 70B ⭐": {
+        "id": "llama-3.3-70b-versatile",
+        "velocidad": "⚡⚡⚡",
+        "inteligencia": "🧠🧠🧠🧠",
+        "descripcion": "Equilibrio perfecto - Recomendado"
+    },
+    "Llama 3.2 90B 🚀": {
+        "id": "llama-3.2-90b-text-preview",
+        "velocidad": "⚡⚡",
+        "inteligencia": "🧠🧠🧠🧠🧠",
+        "descripcion": "Más inteligente - Tareas complejas"
+    },
+    "Mixtral 8x7B ⚡": {
+        "id": "mixtral-8x7b-32768",
+        "velocidad": "⚡⚡⚡⚡",
+        "inteligencia": "🧠🧠🧠",
+        "descripcion": "Muy rápido - Respuestas simples"
+    },
+    "Llama 3.1 70B": {
+        "id": "llama-3.1-70b-versatile",
+        "velocidad": "⚡⚡⚡",
+        "inteligencia": "🧠🧠🧠🧠",
+        "descripcion": "Versión anterior - Estable"
+    },
+    "Gemma 2 9B 💨": {
+        "id": "gemma2-9b-it",
+        "velocidad": "⚡⚡⚡⚡⚡",
+        "inteligencia": "🧠🧠",
+        "descripcion": "Ultra rápido - Conversación casual"
+    }
+}
+
+# Modelo por defecto (el recomendado)
+MODELO_DEFAULT = "Llama 3.3 70B ⭐"
+
+# ========================================
+# 📌 FIN CONFIGURACIÓN MODELOS
+# ========================================
+
 # --- FUNCIONES ---
 def detectar_pedido_imagen(texto):
     palabras_clave = ['genera una imagen', 'crea una imagen', 'genera un', 'crea un', 'muéstrame', 'dibuja', 'diseña', 'imagen de', 'foto de', 'logo de']
@@ -199,6 +243,27 @@ div[data-testid="stTextInput"] label {
     box-shadow: 0 5px 20px rgba(255, 59, 48, 0.3) !important;
 }
 
+/* INFO MODELO - ESTILO BADGE */
+.modelo-info {
+    background: rgba(255, 59, 48, 0.1);
+    border: 1px solid rgba(255, 59, 48, 0.3);
+    border-radius: 8px;
+    padding: 10px;
+    margin: 10px 0;
+    font-size: 11px;
+    color: #ccc;
+}
+
+.modelo-badge {
+    background: #ff3b30;
+    color: white;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 600;
+    margin-right: 5px;
+}
+
 hr {
     border: none !important;
     height: 1px !important;
@@ -233,7 +298,6 @@ footer {visibility: hidden;}
 # --- CONEXIONES ---
 client = Groq(api_key=st.secrets["GROQ_API_KEY"].strip())
 supabase = create_client(st.secrets["SUPABASE_URL"], st.secrets["SUPABASE_KEY"])
-ruth_avatar = None  # Cambiado de "●" a None para evitar error
 
 # --- ESTADOS ---
 if "logged_in" not in st.session_state:
@@ -244,11 +308,13 @@ if "auth_mode" not in st.session_state:
     st.session_state.auth_mode = "login"
 if "messages" not in st.session_state:
     st.session_state.messages = []
+if "modelo_seleccionado" not in st.session_state:
+    st.session_state.modelo_seleccionado = MODELO_DEFAULT
 
 # --- LOGIN ---
 def login_ui():
     st.markdown('<div class="ruth-header">RUTH</div>', unsafe_allow_html=True)
-    st.markdown('<div class="ruth-subtitle">Universal Business Suite · IA Visual</div>', unsafe_allow_html=True)
+    st.markdown('<div class="ruth-subtitle">Universal Business Suite · IA Visual · Multi-Modelo</div>', unsafe_allow_html=True)
     
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
@@ -313,6 +379,33 @@ with st.sidebar:
     
     st.divider()
     
+    # ========================================
+    # 🤖 SELECTOR DE MODELO IA
+    # ========================================
+    modelo_nombre = st.selectbox(
+        "MOTOR IA",
+        list(MODELOS_DISPONIBLES.keys()),
+        index=list(MODELOS_DISPONIBLES.keys()).index(st.session_state.modelo_seleccionado),
+        key="selector_modelo",
+        help="Elige el modelo de IA según tus necesidades"
+    )
+    
+    # Guardar selección
+    st.session_state.modelo_seleccionado = modelo_nombre
+    modelo_info = MODELOS_DISPONIBLES[modelo_nombre]
+    
+    # Mostrar info del modelo
+    st.markdown(f"""
+    <div class="modelo-info">
+        <div><span class="modelo-badge">VELOCIDAD</span>{modelo_info['velocidad']}</div>
+        <div><span class="modelo-badge">INTELIGENCIA</span>{modelo_info['inteligencia']}</div>
+        <div style="margin-top: 8px; font-size: 10px; color: #999;">{modelo_info['descripcion']}</div>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    st.divider()
+    # ========================================
+    
     ESP = {
         "Abogada": "Abogada especializada en derecho corporativo.",
         "Amazon": "Experta en venta en Amazon y e-commerce.",
@@ -359,7 +452,7 @@ with st.sidebar:
 
 # --- MAIN ---
 st.markdown('<div class="ruth-header">RUTH</div>', unsafe_allow_html=True)
-st.markdown('<div class="ruth-subtitle">Universal Business Suite · IA Visual</div>', unsafe_allow_html=True)
+st.markdown('<div class="ruth-subtitle">Universal Business Suite · IA Visual · Multi-Modelo</div>', unsafe_allow_html=True)
 
 # Botones especialidades
 cols = st.columns(4)
@@ -368,8 +461,14 @@ for i, label in enumerate(list(ESP.keys())):
         if st.button(label.upper(), key=f"btn_{i}"):
             st.session_state.messages.append({"role": "user", "content": f"Activa modo: {label}"})
             sys_prompt = f"Eres RUTH, {ESP[label]} {TON[personalidad]}"
+            
+            # ========================================
+            # 🤖 USAR MODELO SELECCIONADO
+            # ========================================
+            modelo_id = MODELOS_DISPONIBLES[st.session_state.modelo_seleccionado]["id"]
+            
             c = client.chat.completions.create(
-                model="llama-3.3-70b-versatile",
+                model=modelo_id,  # Usa el modelo seleccionado
                 messages=[{"role": "system", "content": sys_prompt}] + st.session_state.messages[-5:]
             )
             st.session_state.messages.append({"role": "assistant", "content": c.choices[0].message.content})
@@ -397,7 +496,7 @@ for msg in st.session_state.messages:
 # Input
 if prompt := st.chat_input("Escribe tu mensaje..."):
     st.session_state.messages.append({"role": "user", "content": prompt})
-    with st.chat_message("user"):
+    with st.chat_message("user", avatar="👤"):
         st.markdown(prompt)
     
     with st.chat_message("assistant", avatar="🤖"):
@@ -409,9 +508,15 @@ if prompt := st.chat_input("Escribe tu mensaje..."):
             st.session_state.messages.append({"role": "assistant", "content": respuesta})
         else:
             sys_prompt = f"Eres RUTH, {ESP[especialidad]} {TON[personalidad]}"
+            
+            # ========================================
+            # 🤖 USAR MODELO SELECCIONADO
+            # ========================================
+            modelo_id = MODELOS_DISPONIBLES[st.session_state.modelo_seleccionado]["id"]
+            
             c = client.chat.completions.create(
                 messages=[{"role": "system", "content": sys_prompt}] + st.session_state.messages[-5:],
-                model="llama-3.3-70b-versatile"
+                model=modelo_id  # Usa el modelo seleccionado
             )
             res = c.choices[0].message.content
             st.markdown(res)
