@@ -17,29 +17,23 @@ MODELOS_DISPONIBLES = {
         "inteligencia": "🧠🧠🧠🧠",
         "descripcion": "Equilibrio perfecto - Recomendado"
     },
-    "Llama 3.2 90B 🚀": {
-        "id": "llama-3.2-90b-text-preview",
-        "velocidad": "⚡⚡",
-        "inteligencia": "🧠🧠🧠🧠🧠",
-        "descripcion": "Más inteligente - Tareas complejas"
-    },
-    "Mixtral 8x7B ⚡": {
-        "id": "mixtral-8x7b-32768",
-        "velocidad": "⚡⚡⚡⚡",
-        "inteligencia": "🧠🧠🧠",
-        "descripcion": "Muy rápido - Respuestas simples"
-    },
     "Llama 3.1 70B": {
         "id": "llama-3.1-70b-versatile",
         "velocidad": "⚡⚡⚡",
         "inteligencia": "🧠🧠🧠🧠",
         "descripcion": "Versión anterior - Estable"
     },
+    "Mixtral 8x7B ⚡": {
+        "id": "mixtral-8x7b-32768",
+        "velocidad": "⚡⚡⚡⚡",
+        "inteligencia": "🧠🧠🧠",
+        "descripcion": "Muy rápido - Respuestas ágiles"
+    },
     "Gemma 2 9B 💨": {
         "id": "gemma2-9b-it",
         "velocidad": "⚡⚡⚡⚡⚡",
         "inteligencia": "🧠🧠",
-        "descripcion": "Ultra rápido - Conversación casual"
+        "descripcion": "Ultra rápido - Chat casual"
     }
 }
 
