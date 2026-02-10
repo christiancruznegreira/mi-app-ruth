@@ -461,9 +461,12 @@ for i, label in enumerate(list(ESP.keys())):
             # ========================================
             modelo_id = MODELOS_DISPONIBLES[st.session_state.modelo_seleccionado]["id"]
             
+            # Filtrar solo mensajes válidos (sin comandos internos)
+            mensajes_validos = [m for m in st.session_state.messages[-5:] if "Activa modo:" not in m.get("content", "")]
+            
             c = client.chat.completions.create(
-                model=modelo_id,  # Usa el modelo seleccionado
-                messages=[{"role": "system", "content": sys_prompt}] + st.session_state.messages[-5:]
+                model=modelo_id,
+                messages=[{"role": "system", "content": sys_prompt}] + mensajes_validos
             )
             st.session_state.messages.append({"role": "assistant", "content": c.choices[0].message.content})
             try:
@@ -508,9 +511,12 @@ if prompt := st.chat_input("Escribe tu mensaje..."):
             # ========================================
             modelo_id = MODELOS_DISPONIBLES[st.session_state.modelo_seleccionado]["id"]
             
+            # Filtrar solo mensajes válidos (sin comandos internos)
+            mensajes_validos = [m for m in st.session_state.messages[-5:] if "Activa modo:" not in m.get("content", "")]
+            
             c = client.chat.completions.create(
-                messages=[{"role": "system", "content": sys_prompt}] + st.session_state.messages[-5:],
-                model=modelo_id  # Usa el modelo seleccionado
+                model=modelo_id,
+                messages=[{"role": "system", "content": sys_prompt}] + mensajes_validos
             )
             res = c.choices[0].message.content
             st.markdown(res)
